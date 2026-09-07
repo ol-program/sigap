@@ -5,6 +5,10 @@
 __pycache__/
 *.pyc
 backend/.venv312/
+backend/.venv/
+
+# Claude Code local runtime state (this machine only, not project source)
+.claude/
 
 # Node
 node_modules/

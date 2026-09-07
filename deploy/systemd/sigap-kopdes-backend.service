@@ -17,7 +17,7 @@ User=www-data
 Group=www-data
 WorkingDirectory=/opt/sigap-kopdes/backend
 EnvironmentFile=/opt/sigap-kopdes/backend/.env.production
-ExecStart=/opt/sigap-kopdes/backend/.venv312/bin/python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+ExecStart=/opt/sigap-kopdes/backend/.venv/bin/python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
 Restart=on-failure
 RestartSec=3
 

@@ -13,9 +13,9 @@ cd "$APP_DIR"
 echo "==> git pull"
 git pull --ff-only origin main
 
-echo "==> backend: install deps (venv python3.12, sesuai README)"
+echo "==> backend: install deps (venv python3.8 sistem -- AI_PROVIDER=anthropic, lihat deploy/README.md)"
 cd "$APP_DIR/backend"
-.venv312/bin/pip install -q -r requirements.txt
+.venv/bin/pip install -q -r requirements.txt
 
 echo "==> frontend: build"
 cd "$APP_DIR/frontend"
