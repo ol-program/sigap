@@ -28,11 +28,11 @@ npm ci --silent
 npm run build --silent
 
 echo "==> restart backend service"
-sudo systemctl restart sigap-kopdes-backend
-sudo systemctl --no-pager --lines=0 status sigap-kopdes-backend
+systemctl restart sigap-kopdes-backend
+systemctl --no-pager --lines=0 status sigap-kopdes-backend
 
 echo "==> reload nginx (serve dist/ baru)"
-sudo nginx -t
-sudo systemctl reload nginx
+nginx -t
+systemctl reload nginx
 
 echo "==> selesai"
