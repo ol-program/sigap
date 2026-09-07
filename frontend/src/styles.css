@@ -284,6 +284,102 @@ tbody tr:hover {
   font-size: 14px;
 }
 
+.score-highlight-card {
+  margin-bottom: 16px;
+}
+
+.score-highlight-inner {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.score-ring-wrap {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  flex-shrink: 0;
+}
+
+.score-ring {
+  width: 100%;
+  height: 100%;
+}
+
+.score-ring-track {
+  stroke: var(--gridline);
+}
+
+.score-ring-progress {
+  transition: stroke-dashoffset 0.6s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-ring-progress {
+    transition: none;
+  }
+}
+
+.score-ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Hero figure: angka tunggal terbesar di halaman ini -- proportional
+   figures (default font), BUKAN tabular-nums (itu dicadangkan untuk kolom
+   angka yang perlu rata, lihat skill dataviz). */
+.score-value {
+  font-size: 40px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.score-max {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.score-highlight-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.score-highlight-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+
+.score-highlight-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Arah delta dibawa oleh glyph ▲/▼ + teks, bukan warna saja. */
+.score-delta {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.score-delta.up { color: var(--status-good); }
+.score-delta.down { color: var(--status-critical); }
+
+.score-highlight-secondary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+}
+
 .insight-card {
   border-left: 3px solid var(--series-1);
 }
