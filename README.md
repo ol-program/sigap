@@ -320,10 +320,27 @@ Percobaan pertama, user yang baru login **langsung ter-logout lagi** walau krede
 
 ## Rencana deployment
 
-Lihat proposal bagian "Gambaran Besar Ide, Metodologi, Tools, dan Teknologi". Kalau target akhirnya VPS (bukan Render/Vercel seperti draf awal), catat: VPS berarti Anda yang mengurus sendiri OS, proses yang tetap menyala (systemd/pm2), reverse proxy (nginx), dan SSL (mis. certbot) — lebih banyak kerja manual dibanding platform terkelola, tapi kerjaan tulis-config-dan-jalankan-perintah seperti ini justru pas dikerjakan bareng AI coding agent.
+Target: VPS (bukan Render/Vercel seperti draf awal di proposal) — nginx sebagai reverse proxy + static file server untuk dua frontend, systemd untuk proses backend yang tetap menyala, certbot untuk SSL. Semua config-nya sudah ada di `deploy/` (bukan cuma rencana di kepala):
 
-**Checklist environment variable wajib sebelum deploy publik** (lihat bagian Autentikasi & Otorisasi untuk detail masing-masing):
-- `JWT_SECRET` — random panjang, API menolak start tanpa ini. JANGAN reuse nilai dev/lokal.
-- `CORS_ORIGINS` — set ke domain **kedua** frontend asli, dipisah koma (dashboard utama + portal superadmin, bukan default `localhost:5173,localhost:5174,admin.localhost:5174`).
-- `ANTHROPIC_API_KEY` — kalau step 5 mau jalan sungguhan di server produksi.
+```
+deploy/
+├── README.md                              # checklist provisioning VPS langkah demi langkah
+├── deploy.sh                               # dijalankan CI/CD (atau manual) tiap deploy: git pull, build, restart
+├── systemd/sigap-kopdes-backend.service    # proses uvicorn yang tetap menyala + auto-restart
+└── nginx/
+    ├── dashboard.conf   # frontend/ (dashboard utama)
+    ├── admin.conf       # frontend-admin/ (portal superadmin)
+    └── api.conf         # reverse proxy ke backend (subdomain terpisah, bukan path /api/ --
+                          # arsitekturnya CORS full-origin, lihat frontend/src/api.js)
+```
+
+**CI/CD** (`.github/workflows/`): `ci.yml` build-check kedua frontend + import-check backend tiap push/PR. `deploy.yml` SSH ke VPS dan jalankan `deploy/deploy.sh` tiap kali `ci.yml` di branch `main`/`master` sukses — baru aktif setelah secrets `VPS_HOST`/`VPS_USER`/`VPS_SSH_KEY` diisi di GitHub (lihat komentar di `deploy.yml` dan `deploy/README.md` langkah 2).
+
+**Kredensial produksi TIDAK pernah lewat git atau CI/CD** — `backend/.env.production`, `frontend/.env.production`, `frontend-admin/.env.production` (masing-masing ada `.env.production.example` sebagai template yang di-commit) di-copy manual sekali ke VPS lewat `scp`, lalu `ANTHROPIC_API_KEY`/`GEMINI_API_KEY` diisi **langsung di file itu di server** — supaya key tidak pernah transit lewat riwayat percakapan/CI mana pun. Checklist isinya (detail tiap field di masing-masing `.env.production.example`):
+- `JWT_SECRET` — random panjang, API menolak start tanpa ini. JANGAN reuse nilai dev/lokal. (Sudah di-generate sekali untuk deployment pertama, lihat `backend/.env.production` lokal -- TIDAK di-commit.)
+- `CORS_ORIGINS` — domain **kedua** frontend asli, dipisah koma (dashboard utama + portal superadmin). Isi setelah domain/sslip.io VPS diketahui.
+- `VITE_API_BASE_URL` (di kedua frontend) — domain `api.conf`, isi setelah domain VPS diketahui.
+- `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` — kalau step 5 mau jalan sungguhan di server produksi.
 - Backup `backend/auth/auth.db` secara terpisah dari `backend/data/output/` — regenerasi data (step 2-4) tidak menyentuhnya, tapi kehilangan disk/volume produksi akan menghapus akun juga kalau tidak di-backup.
+
+Urutan lengkap provisioning (server baru, DNS/sslip.io, systemd, nginx, certbot, akun pertama): lihat `deploy/README.md`.

@@ -1,0 +1,41 @@
+name: Deploy to VPS
+
+# Jalan setelah CI hijau di push ke main/master -- SSH ke VPS dan jalankan
+# deploy/deploy.sh di sana (git pull + rebuild + restart service).
+#
+# BUTUH secrets di Settings > Secrets and variables > Actions repo ini
+# (belum diisi -- job "deploy" akan gagal sampai secrets ini ada):
+#   VPS_HOST        IP atau hostname VPS
+#   VPS_USER        user SSH non-root yang sudah disiapkan di VPS
+#   VPS_SSH_KEY     private key SSH (yang public key-nya sudah ada di
+#                   ~/.ssh/authorized_keys user itu di VPS) -- generate
+#                   pasangan key KHUSUS untuk deploy ini, jangan reuse
+#                   key pribadi:
+#                     ssh-keygen -t ed25519 -C "github-actions-deploy" -f deploy_key -N ""
+#                   lalu tempel isi deploy_key.pub ke authorized_keys VPS,
+#                   dan isi deploy_key (private) ke secret VPS_SSH_KEY.
+#   VPS_SSH_PORT    opsional, default 22
+#
+# Kredensial aplikasi (JWT_SECRET, ANTHROPIC_API_KEY, dst) TIDAK lewat CI/CD
+# sama sekali -- itu hidup di backend/.env.production LANGSUNG di VPS
+# (di-deploy manual sekali via scp, lihat README), supaya tidak pernah
+# transit lewat GitHub Actions atau tersimpan di riwayat mana pun.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main, master]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          script: bash /opt/sigap-kopdes/deploy/deploy.sh

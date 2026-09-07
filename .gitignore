@@ -10,8 +10,12 @@ backend/.venv312/
 node_modules/
 dist/
 
-# Kredensial produksi -- lihat backend/.env.production.example untuk template
+# Kredensial/config produksi -- lihat *.env.production.example masing-masing
+# untuk template. Domain VPS asli (belum ada saat commit ini) juga dianggap
+# config produksi, bukan sumber, jadi ikut sini.
 backend/.env.production
+frontend/.env.production
+frontend-admin/.env.production
 
 # Data akun (bcrypt hash password + JWT scope) -- state runtime, BUKAN
 # artefak build. Dibuat lewat auth/create_user.py, backup terpisah di

@@ -1,0 +1,54 @@
+name: CI
+
+# Jalan di tiap push & PR -- build check dua frontend + syntax/import check
+# backend. Tidak ada automated test suite di project ini (lihat README),
+# jadi ini baru "apakah kodenya build/compile", bukan jaminan bebas bug.
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  frontend-build:
+    name: Build frontend (${{ matrix.app }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: [frontend, frontend-admin]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: ${{ matrix.app }}/package-lock.json
+      - run: npm ci
+        working-directory: ${{ matrix.app }}
+      - run: npm run build
+        working-directory: ${{ matrix.app }}
+
+  backend-check:
+    name: Backend syntax/import check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+        working-directory: backend
+      - name: Compile check (syntax)
+        run: python -m compileall -q .
+        working-directory: backend
+      - name: Import check (catches missing deps / import errors early)
+        run: |
+          python -c "import sys; sys.path.insert(0, '.')"
+          JWT_SECRET=ci-placeholder-not-for-production python -c "
+          import auth.auth
+          import api.main
+          import scoring.compute_scores
+          import prediction.predict_risk
+          import ai_insight.generate_insight
+          print('OK: semua modul backend ter-import tanpa error')
+          "
+        working-directory: backend

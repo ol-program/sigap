@@ -1,0 +1,31 @@
+# Install sekali di VPS: sudo cp deploy/systemd/sigap-kopdes-backend.service /etc/systemd/system/
+#                          sudo systemctl daemon-reload
+#                          sudo systemctl enable --now sigap-kopdes-backend
+#
+# EnvironmentFile menunjuk ke backend/.env.production -- file itu TIDAK ada
+# di git (lihat root .gitignore), harus di-copy manual sekali ke VPS
+# (scp/rsync) dari mesin lokal, LALU isi ANTHROPIC_API_KEY/GEMINI_API_KEY
+# langsung di file itu DI SERVER (jangan pernah lewat chat/CI).
+
+[Unit]
+Description=SIGAP Kopdes backend (FastAPI/uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/sigap-kopdes/backend
+EnvironmentFile=/opt/sigap-kopdes/backend/.env.production
+ExecStart=/opt/sigap-kopdes/backend/.venv312/bin/python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=3
+
+# Hardening dasar
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/sigap-kopdes/backend/auth /opt/sigap-kopdes/backend/data/output
+
+[Install]
+WantedBy=multi-user.target
