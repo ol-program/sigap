@@ -13,9 +13,9 @@ cd "$APP_DIR"
 echo "==> git pull"
 git pull --ff-only origin main
 
-echo "==> backend: install deps (venv python3.8 sistem -- AI_PROVIDER=anthropic, lihat deploy/README.md)"
+echo "==> backend: install deps (venv python3.12 via uv, sesuai deploy/README.md -- google-genai butuh 3.10+)"
 cd "$APP_DIR/backend"
-.venv/bin/pip install -q -r requirements.txt
+.venv312/bin/pip install -q -r requirements.txt google-genai
 
 echo "==> frontend: build"
 cd "$APP_DIR/frontend"

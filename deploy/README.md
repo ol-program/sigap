@@ -7,17 +7,17 @@ kali** di bawah ini manual — jalankan sekali per VPS.
 **VPS ini spesifik:** Ubuntu 20.04 LTS (Focal), ~1GB RAM, akses `root`,
 IP `109.105.194.204`. Repo: https://github.com/ol-program/sigap (publik).
 
-**Kenapa bukan Python 3.12 di server (beda dari instruksi dev lokal di
-README utama):** rencana awal pakai `python3.12` dari PPA deadsnakes, TAPI
-PPA itu ternyata **sudah kosong untuk Focal** (indeks paketnya 0 byte --
-di-diverifikasi langsung dari `InRelease` PPA-nya, bukan asumsi -- kemungkinan
-dihentikan setelah Focal EOL Mei 2025). Solusinya: backend di VPS ini pakai
-Python **3.8 bawaan sistem** + `.venv` biasa -- ini cukup karena
-`backend/.env.production` sudah di-set `AI_PROVIDER=anthropic` (default
-project), dan kebutuhan Python 3.10+ di README utama itu SPESIFIK untuk
-`google-genai` (provider Gemini) yang tidak dipakai di deployment ini. Kalau
-nanti mau pindah ke Gemini di server ini, baru perlu Python 3.10+ lewat cara
-lain (kompilasi dari source, atau `uv python install`) -- BUKAN deadsnakes.
+**Kenapa Python 3.12 di server ini dipasang lewat `uv`, bukan deadsnakes PPA
+seperti draf awal (beda juga dari instruksi dev lokal di README utama):**
+PPA deadsnakes ternyata **sudah kosong untuk Focal** (indeks paketnya 0 byte
+-- di-diverifikasi langsung dari `InRelease` PPA-nya, bukan asumsi --
+kemungkinan dihentikan setelah Focal EOL Mei 2025). `google-genai` (provider
+Gemini, dipakai project ini) butuh Python **>=3.10**, dan Focal cuma punya
+3.8 di apt default. Solusinya: [uv](https://docs.astral.sh/uv/) (Astral) --
+binary statis, tidak perlu PPA/kompilasi, dan Python-nya prebuilt (~2 detik
+install, bukan 15-30 menit kompilasi dari source yang berat untuk RAM 1GB
+ini). Kalau nanti provider dibalik ke `AI_PROVIDER=anthropic` (tidak butuh
+3.10+), venv `.venv312` ini tetap kompatibel -- tidak perlu diganti lagi.
 
 **RAM ~1GB, swapfile 2GB dibuat DULU** sebelum instal apa pun supaya proses
 `npm run build` (2 frontend React) tidak ke-OOM-kill.
@@ -41,8 +41,27 @@ fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile
 swapon /swapfile
 echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
-# python venv + pip (python3.8 bawaan Focal, lihat catatan di atas soal 3.12)
-apt install -y python3-venv python3-pip
+# python 3.12 lewat uv (lihat catatan di atas soal deadsnakes vs uv)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source $HOME/.local/bin/env
+uv python install 3.12
+
+# JEBAKAN PERMISSION: `uv python install` sebagai root nyimpen Python-nya di
+# /root/.local/share/uv/python/... -- direktori /root sendiri permission-nya
+# 700 (cuma root yang bisa traverse ke situ SAMA SEKALI, termasuk symlink di
+# ~/.local/bin/python3.12 yang mengarah balik ke sana). Backend jalan sebagai
+# `www-data` (lihat systemd unit), BUKAN root -- jadi kalau venv dibuat
+# langsung dari `~/.local/bin/python3.12`, service akan gagal start dengan
+# "Permission denied" spawning .venv312/bin/python (venv-nya juga cuma
+# symlink balik ke /root). Pernah kejadian PERSIS ini saat deploy pertama.
+# Fix: copy Python-nya (DEREFERENCE symlink dengan -L, bukan cuma copy
+# symlink-nya) ke lokasi yang bisa ditraverse semua user, baru venv dibuat
+# dari situ:
+mkdir -p /opt/uv-python
+SRC=$(dirname "$(dirname "$(readlink -f "$HOME/.local/bin/python3.12")")")   # ikut versi patch apa pun yang ke-install
+cp -aL "$SRC" /opt/uv-python/cpython-3.12
+chmod -R o+rX /opt/uv-python
+sudo -u www-data /opt/uv-python/cpython-3.12/bin/python3.12 --version   # harus sukses print versi, bukan Permission denied
 
 # node 20 LTS -- Focal punya nodejs versi lama di apt default, pakai NodeSource
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
@@ -125,8 +144,9 @@ certbot --nginx \
 
 ```bash
 cd /opt/sigap-kopdes/backend
-python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+/opt/uv-python/cpython-3.12/bin/python3.12 -m venv .venv312   # BUKAN ~/.local/bin/python3.12 -- lihat jebakan permission /root di langkah 1
+.venv312/bin/pip install -r requirements.txt google-genai
+chown -R www-data:www-data .venv312   # service jalan sebagai www-data, lihat systemd unit
 
 cp /opt/sigap-kopdes/deploy/systemd/sigap-kopdes-backend.service /etc/systemd/system/
 systemctl daemon-reload
@@ -134,13 +154,26 @@ systemctl enable --now sigap-kopdes-backend
 systemctl status sigap-kopdes-backend --no-pager
 ```
 
+**Catatan penting soal permission:** `git clone` di langkah 2 bikin semua
+file dimiliki `root`, tapi service jalan sebagai `www-data` (lihat `User=`
+di systemd unit, praktik baik -- backend TIDAK jalan sebagai root). Kalau
+lupa `chown` di atas, service akan crash-restart terus dengan error
+`sqlite3.OperationalError: unable to open database file` karena `www-data`
+tidak bisa tulis `auth/auth.db`. `chown -R www-data:www-data` juga perlu
+dijalankan untuk `backend/auth/` dan `backend/data/output/` (bukan cuma
+`.venv312/`) -- lihat `ReadWritePaths` di systemd unit untuk daftar lengkap
+folder yang perlu bisa ditulis `www-data`:
+```bash
+chown -R www-data:www-data /opt/sigap-kopdes/backend/auth /opt/sigap-kopdes/backend/data/output
+```
+
 ## 6. Akun pertama (superadmin wajib lewat CLI, lihat README)
 
 ```bash
 cd /opt/sigap-kopdes/backend
 export JWT_SECRET=$(grep JWT_SECRET .env.production | cut -d= -f2)
-.venv/bin/python auth/create_user.py --username superadmin --role superadmin
-.venv/bin/python auth/create_user.py --username admin --role admin
+.venv312/bin/python auth/create_user.py --username superadmin --role superadmin
+.venv312/bin/python auth/create_user.py --username admin --role admin
 ```
 
 ## 7. Build awal frontend + jalankan deploy.sh
