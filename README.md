@@ -14,7 +14,10 @@ Dokumen lengkap: lihat `Proposal_SIGAP_Kopdes_LAN_Datathon_2026.docx`.
 - [x] **6. Backend API** — FastAPI yang menyajikan skor, prediksi, dan insight AI (`backend/api/main.py`)
 - [x] **7. Dashboard React** — terhubung langsung ke API step 6 (`frontend/`); tidak ada mockup lama untuk dihubungkan, dibangun dari nol (lihat catatan di bawah)
 - [x] **Autentikasi & Otorisasi** — ditambahkan sebelum deployment karena data ini sensitif (`backend/auth/`); login wajib, akses PMO dibatasi per wilayah
-- [ ] **8. Deployment** — backend + frontend online agar bisa diakses juri
+- [x] **8. Deployment** — live di VPS (lihat `deploy/`), diakses lewat sslip.io sementara sampai ada domain asli:
+  - Dashboard: https://dash.109-105-194-204.sslip.io
+  - Portal superadmin: https://admin.109-105-194-204.sslip.io
+  - API: https://api.109-105-194-204.sslip.io/docs
 
 Kita kerjakan satu per satu — centang bertambah tiap step selesai.
 
