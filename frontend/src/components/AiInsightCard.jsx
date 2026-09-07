@@ -72,40 +72,46 @@ export default function AiInsightCard({ koperasiId, initial }) {
     return <p className="page-desc" style={{ margin: 0 }}>Belum ada AI insight untuk koperasi ini.</p>;
   }
 
-  const blocks = [
-    { title: "Narasi kondisi", body: <p style={{ margin: 0 }}>{insight.narasi}</p> },
-    { title: "Rekomendasi tindakan", body: <p style={{ margin: 0 }}>{insight.rekomendasi_tindakan}</p> },
-    {
-      title: "Produk & jasa prioritas",
-      body: (
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
-          {toList(insight.produk_prioritas).map((item, i) => <li key={i}>{item}</li>)}
-        </ul>
-      ),
-    },
-    { title: "Rekomendasi promosi", body: <p style={{ margin: 0 }}>{insight.rekomendasi_promosi}</p> },
-    {
-      title: "Program pengembangan",
-      body: (
-        <ul style={{ margin: 0, paddingLeft: 18 }}>
-          {toList(insight.rekomendasi_program).map((item, i) => <li key={i}>{item}</li>)}
-        </ul>
-      ),
-    },
-  ];
+  // Satu section terstruktur (bukan 5 kotak bersarang terpisah) -- narasi
+  // jadi pengantar tanpa kotak, lalu dua rekomendasi singkat berdampingan,
+  // lalu dua daftar (produk & program) berdampingan. Reveal animation tetap
+  // stagger per bagian saat baru selesai di-generate (bukan dari cache).
+  const revealStyle = (i) => (justGenerated ? { animationDelay: `${i * 80}ms` } : undefined);
+  const revealCls = justGenerated ? " insight-reveal" : "";
 
   return (
-    <>
-      {blocks.map((b, i) => (
-        <div
-          key={b.title}
-          className={`insight-card card${justGenerated ? " insight-reveal" : ""}`}
-          style={justGenerated ? { animationDelay: `${i * 80}ms` } : undefined}
-        >
-          <h4>{b.title}</h4>
-          {b.body}
+    <div className="insight-body">
+      <p className={`insight-narasi${revealCls}`} style={revealStyle(0)}>{insight.narasi}</p>
+
+      <div className="insight-divider" />
+
+      <div className={`insight-grid${revealCls}`} style={revealStyle(1)}>
+        <div className="insight-section">
+          <h5>Rekomendasi Tindakan</h5>
+          <p>{insight.rekomendasi_tindakan}</p>
         </div>
-      ))}
-    </>
+        <div className="insight-section">
+          <h5>Rekomendasi Promosi</h5>
+          <p>{insight.rekomendasi_promosi}</p>
+        </div>
+      </div>
+
+      <div className="insight-divider" />
+
+      <div className={`insight-grid${revealCls}`} style={revealStyle(2)}>
+        <div className="insight-section">
+          <h5>Produk &amp; Jasa Prioritas</h5>
+          <ul>
+            {toList(insight.produk_prioritas).map((item, i) => <li key={i}>{item}</li>)}
+          </ul>
+        </div>
+        <div className="insight-section">
+          <h5>Program Pengembangan</h5>
+          <ul>
+            {toList(insight.rekomendasi_program).map((item, i) => <li key={i}>{item}</li>)}
+          </ul>
+        </div>
+      </div>
+    </div>
   );
 }

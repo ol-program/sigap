@@ -45,6 +45,7 @@ export default function KoperasiDetailPage() {
 
       <div className="detail-grid">
         <div className="card">
+          <h4 style={{ marginTop: 0 }}>Profil Koperasi</h4>
           <dl className="kv-list" style={{ margin: 0 }}>
             <dt>Jenis usaha</dt>
             <dd>{koperasi.jenis_usaha}</dd>
@@ -72,17 +73,15 @@ export default function KoperasiDetailPage() {
           </dl>
         </div>
 
-        <div>
-          <div className="card" style={{ marginBottom: 16 }}>
-            <h4 style={{ marginTop: 0 }}>Tren skor kesehatan</h4>
-            <ScoreTrendChart data={histori_skor} />
-          </div>
-
-          <div className="card">
-            <h4 style={{ marginTop: 0 }}>AI Insight &amp; Rekomendasi</h4>
-            <AiInsightCard koperasiId={koperasi.koperasi_id} initial={ai_insight_terbaru} />
-          </div>
+        <div className="card">
+          <h4 style={{ marginTop: 0 }}>Tren Skor Kesehatan</h4>
+          <ScoreTrendChart data={histori_skor} />
         </div>
+      </div>
+
+      <div className="card" style={{ marginTop: 16 }}>
+        <h4 style={{ marginTop: 0 }}>AI Insight &amp; Rekomendasi</h4>
+        <AiInsightCard koperasiId={koperasi.koperasi_id} initial={ai_insight_terbaru} />
       </div>
     </div>
   );

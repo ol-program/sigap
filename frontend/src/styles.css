@@ -380,16 +380,47 @@ tbody tr:hover {
   align-items: center;
 }
 
-.insight-card {
-  border-left: 3px solid var(--series-1);
+/* AI Insight -- satu section terstruktur (narasi + dua baris grid 2 kolom),
+   bukan kartu-di-dalam-kartu -- lihat AiInsightCard.jsx. */
+.insight-body {
+  font-size: 14px;
 }
-.insight-card h4 {
-  margin: 0 0 8px;
-  font-size: 13px;
+
+.insight-narasi {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.insight-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 16px 0;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 640px) {
+  .insight-grid { grid-template-columns: 1fr; }
+}
+
+.insight-section h5 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
   color: var(--text-secondary);
 }
-.insight-card + .insight-card {
-  margin-top: 12px;
+.insight-section p,
+.insight-section ul {
+  margin: 0;
+  line-height: 1.5;
+}
+.insight-section ul {
+  padding-left: 18px;
 }
 
 /* AI Insight -- animasi "sedang berpikir" selagi generate on-demand,
