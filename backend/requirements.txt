@@ -1,0 +1,15 @@
+# step 2 (data simulasi): standard library saja, tidak perlu baris di bawah ini
+pandas          # step 3 (engine skor) & step 4 (fitur model)
+scikit-learn    # step 4 (model prediksi risiko)
+joblib          # step 4 (simpan/muat model terlatih)
+anthropic       # step 5 (AI Insight & Rekomendasi) -- AI_PROVIDER=anthropic (default)
+fastapi         # step 6 (backend API)
+uvicorn[standard] # step 6 (server ASGI untuk menjalankan FastAPI)
+bcrypt          # autentikasi: hash password
+pyjwt           # autentikasi: token sesi (JWT)
+
+# opsional, cuma untuk backend/data/prepare_idm_lookup.py (sekali jalan):
+# openpyxl
+
+# opsional, alternatif GRATIS untuk step 5 (AI_PROVIDER=gemini) -- butuh Python >= 3.10:
+# google-genai

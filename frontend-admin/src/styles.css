@@ -1,0 +1,239 @@
+/* Trimmed dari frontend/src/styles.css -- cuma token & komponen yang
+   dipakai portal superadmin ini (login, ganti password, tabel manajemen
+   akun). Sengaja dijaga tetap terpisah (bukan import shared package) --
+   dua frontend ini memang dua deployment independen (lihat README bagian
+   "Portal Superadmin"), jadi duplikasi kecil di sini lebih simpel daripada
+   mengurus shared package cuma untuk beberapa class CSS. */
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --page-plane: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --border: rgba(11, 11, 11, 0.1);
+
+  --series-1: #2a78d6;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --page-plane: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --gridline: #2c2c2a;
+    --border: rgba(255, 255, 255, 0.1);
+
+    --series-1: #3987e5;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Lockup logo punya versi teks navy (untuk latar terang) & teks putih
+   (untuk latar gelap) -- tukar lewat CSS, bukan JS, supaya ikut berubah
+   seketika kalau OS/browser toggle tema tanpa reload. */
+.logo-lockup-dark {
+  display: none;
+}
+@media (prefers-color-scheme: dark) {
+  .logo-lockup-light {
+    display: none;
+  }
+  .logo-lockup-dark {
+    display: block;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--page-plane);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h2 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+
+.page-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 0 0 20px;
+}
+
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.filters-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+th {
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 12px;
+  border-bottom: 1px solid var(--gridline);
+  padding: 8px 10px;
+}
+
+td {
+  padding: 10px;
+  border-bottom: 1px solid var(--gridline);
+  font-variant-numeric: tabular-nums;
+}
+
+tbody tr:hover {
+  background: var(--page-plane);
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.table-wrap table {
+  min-width: 640px;
+}
+
+.empty-state, .error-state, .loading-state {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.error-state {
+  color: var(--status-critical);
+}
+
+.btn {
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.btn:hover { background: var(--page-plane); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-primary {
+  background: var(--series-1);
+  border-color: var(--series-1);
+  color: #fff;
+}
+.btn-primary:hover { opacity: 0.9; background: var(--series-1); }
+.btn-danger {
+  border-color: var(--status-critical);
+  color: var(--status-critical);
+}
+.btn-danger:hover { background: var(--status-critical); color: #fff; }
+.btn-sm { padding: 4px 9px; font-size: 12px; }
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.form-field { margin-bottom: 14px; }
+.form-field label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+.form-field input, .form-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.form-field .field-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+}
+.checkbox-grid label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+.modal-card {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.modal-card h3 { margin-top: 0; }
+
+.badge-warn, .badge-ok {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.badge-warn {
+  background: rgba(250, 178, 25, 0.15);
+  color: var(--status-warning);
+  border: 1px solid rgba(250, 178, 25, 0.4);
+}
+.badge-ok {
+  background: rgba(12, 163, 12, 0.12);
+  color: var(--status-good);
+  border: 1px solid rgba(12, 163, 12, 0.35);
+}

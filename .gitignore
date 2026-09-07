@@ -1,0 +1,27 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+backend/.venv312/
+
+# Node
+node_modules/
+dist/
+
+# Kredensial produksi -- lihat backend/.env.production.example untuk template
+backend/.env.production
+
+# Data akun (bcrypt hash password + JWT scope) -- state runtime, BUKAN
+# artefak build. Dibuat lewat auth/create_user.py, backup terpisah di
+# produksi (lihat README bagian "Rencana deployment").
+backend/auth/auth.db
+
+# Sumber IDM mentah (7MB+) -- cuma dipakai sekali oleh
+# backend/data/prepare_idm_lookup.py, hasilnya (idm_2024_lookup.csv) sudah
+# di-commit dan itu yang dibaca generate_data.py setiap run.
+indeks-desa-membangun-tahun-2024-hasil-pemutakhiran*.xlsx
+
+# Arsip redundan -- isinya identik dengan files/ yang sudah di-track.
+files.zip
