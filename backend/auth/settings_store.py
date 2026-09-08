@@ -7,8 +7,8 @@ sifatnya sama -- config operasional yang harus SELAMAT dari
 generate_data.py menulis ulang sigap_kopdes.db total (lihat auth.py untuk
 alasan yang sama soal tabel users).
 
-Provider & API key AI (AI_PROVIDER, ANTHROPIC_API_KEY/GEMINI_API_KEY,
-lihat ai_insight/generate_insight.py) awalnya HANYA bisa diset lewat
+Provider & API key AI (AI_PROVIDER, ANTHROPIC_API_KEY/GEMINI_API_KEY/
+OLLAMA_API_KEY, lihat ai_insight/generate_insight.py) awalnya HANYA bisa diset lewat
 environment variable saat proses start. Ditambahkan di sini supaya
 superadmin bisa ganti keduanya lewat portal Manajemen Akun
 (frontend-admin/) TANPA akses shell/redeploy -- lihat endpoint
@@ -68,7 +68,10 @@ def load_settings_into_environ():
     key/provider yang PERNAH diganti lewat UI (tersimpan di auth.db), timpa
     env var proses ini supaya konsisten dengan yang terakhir di-set lewat
     UI, bukan env var lama/usang yang kebetulan masih ter-export di shell."""
-    for key in ("ANTHROPIC_API_KEY", "GEMINI_API_KEY", "AI_PROVIDER", "CLAUDE_MODEL", "GEMINI_MODEL"):
+    for key in (
+        "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OLLAMA_API_KEY",
+        "AI_PROVIDER", "CLAUDE_MODEL", "GEMINI_MODEL", "OLLAMA_MODEL",
+    ):
         value = get_setting(key)
         if value:
             os.environ[key] = value

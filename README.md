@@ -117,7 +117,7 @@ Catatan jujur: percobaan pertama menghasilkan ROC-AUC 0.99 yang **terlalu bagus 
 
 ## Menjalankan step 5 (AI Insight & Rekomendasi)
 
-Dua provider LLM didukung, dipilih lewat env var `AI_PROVIDER` (default `anthropic`) — `PROMPT_TEMPLATE` dan skema JSON keluarannya **sama persis** untuk keduanya, cuma cara memanggil API-nya yang beda:
+Tiga provider LLM didukung, dipilih lewat env var `AI_PROVIDER` (default `anthropic`) — `PROMPT_TEMPLATE` dan skema JSON keluarannya **sama persis** untuk ketiganya, cuma cara memanggil API-nya yang beda:
 
 ```bash
 cd backend
@@ -136,6 +136,14 @@ pip install google-genai   # butuh Python >= 3.10 (cek: python3 --version)
 export AI_PROVIDER=gemini
 export GEMINI_API_KEY=...   # bikin di https://aistudio.google.com/apikey
 python ai_insight/generate_insight.py --koperasi KDMP-00001
+
+# 2c. ATAU pakai Ollama Cloud (model gemma4:cloud, default) -- dipanggil
+# lewat HTTPS ke ollama.com, BUKAN server Ollama lokal (jadi tidak perlu
+# install/jalankan `ollama serve` di server backend ini):
+pip install ollama
+export AI_PROVIDER=ollama
+export OLLAMA_API_KEY=...   # bikin di https://ollama.com/settings/keys
+python ai_insight/generate_insight.py --koperasi KDMP-00001
 ```
 
 **Kalau `python3` sistem Anda lebih lama dari 3.10** (paket `google-genai` menolak versi di bawah itu): sama seperti kasus Node.js di step 7, cek dulu apakah ada Python versi lebih baru sudah terpasang (`ls /usr/local/Cellar/python*` di Homebrew macOS, atau `pyenv versions`) sebelum install versi baru — pakai `python3.12 -m venv .venv && source .venv/bin/activate` supaya tidak menimpa `python3` default sistem.
@@ -148,7 +156,7 @@ Kuota & syarat tier gratis Gemini bisa berubah — cek angka terkini di [ai.goog
 
 Cara di atas (CLI, `--koperasi`/batch semua) tetap ada, tapi **bukan satu-satunya jalan lagi**. `backend/api/main.py` sekarang generate insight **realtime** begitu dashboard membuka halaman detail koperasi yang belum pernah punya insight tersimpan -- klik koperasi di Daftar Koperasi, endpoint `GET /insight/{koperasi_id}` cek cache dulu, kalau kosong baru panggil LLM saat itu juga (~2-15 detik tergantung provider), simpan hasilnya, lalu kunjungan berikutnya ke koperasi yang sama langsung dari cache (tanpa panggil LLM lagi). Ini dipilih supaya **kuota API cuma terpakai untuk koperasi yang benar-benar dilihat pengguna**, bukan di-generate sekaligus untuk semua koperasi (banyak di antaranya mungkin tidak pernah dibuka siapa pun).
 
-Konsekuensinya: **backend API (step 6) butuh API key provider yang sama** seperti CLI (`ANTHROPIC_API_KEY` atau `GEMINI_API_KEY` + `AI_PROVIDER=gemini`) di environment-nya saat dijalankan (lihat `uvicorn api.main:app`) -- kalau belum di-set, endpoint balas `503` dengan pesan jelas (bukan error 500 misterius), dan frontend menampilkan pesan yang sama ke pengguna alih-alih AI insight-nya.
+Konsekuensinya: **backend API (step 6) butuh API key provider yang sama** seperti CLI (`ANTHROPIC_API_KEY`, atau `GEMINI_API_KEY` + `AI_PROVIDER=gemini`, atau `OLLAMA_API_KEY` + `AI_PROVIDER=ollama`) di environment-nya saat dijalankan (lihat `uvicorn api.main:app`) -- kalau belum di-set, endpoint balas `503` dengan pesan jelas (bukan error 500 misterius), dan frontend menampilkan pesan yang sama ke pengguna alih-alih AI insight-nya.
 
 Di frontend, kartu AI Insight (`src/components/AiInsightCard.jsx`) menampilkan **skeleton shimmer + indikator "sedang berpikir"** selagi generate berlangsung, lalu tiap kartu hasil muncul dengan animasi fade-in bertahap (bukan cuma kartu yang sudah di-cache -- itu tampil langsung tanpa animasi supaya tidak berkedip tiap kali halaman dibuka ulang). Menghormati `prefers-reduced-motion`.
 
@@ -285,11 +293,11 @@ Manajemen akun (buat/edit/reset password/hapus) SENGAJA **bukan** halaman di dal
 
 Role `superadmin` **tidak pernah muncul** sebagai pilihan di form Tambah/Edit Akun portal ini (cuma `pmo` & `admin`/"Pemerintah Pusat (Admin)") -- lihat batasan "cuma satu superadmin" di atas. Baris akun `superadmin` sendiri di tabel juga tidak punya tombol Edit/Reset Password/Hapus (backend menolak ketiganya untuk target berrole `superadmin` juga, lihat `admin_update_user`/`admin_delete_user` di `api/main.py`) -- satu-satunya cara mengelola akun superadmin adalah CLI.
 
-Portal ini juga jadi tempat mengganti **provider & API key AI Insight** (`AI_PROVIDER`, `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`, dipakai step 5) tanpa perlu akses shell/redeploy -- kartu "AI Insight -- Provider & API Key" di halaman yang sama, dengan dropdown Anthropic/Gemini terpisah dari field API key (masing-masing provider punya key sendiri, tidak saling menggantikan -- ganti provider dulu, baru isi key untuk provider itu kalau belum pernah diisi). Keduanya disimpan di tabel `settings` (auth.db, lihat `auth/settings_store.py`) dan langsung menimpa `os.environ` proses backend yang sedang jalan (berlaku seketika, tanpa restart), sekaligus dipakai lagi otomatis tiap kali backend di-restart.
+Portal ini juga jadi tempat mengganti **provider & API key AI Insight** (`AI_PROVIDER`, `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`/`OLLAMA_API_KEY`, dipakai step 5) tanpa perlu akses shell/redeploy -- kartu "AI Insight -- Provider & API Key" di halaman yang sama, dengan dropdown Anthropic/Gemini/Ollama terpisah dari field API key (masing-masing provider punya key sendiri, tidak saling menggantikan -- ganti provider dulu, baru isi key untuk provider itu kalau belum pernah diisi). Keduanya disimpan di tabel `settings` (auth.db, lihat `auth/settings_store.py`) dan langsung menimpa `os.environ` proses backend yang sedang jalan (berlaku seketika, tanpa restart), sekaligus dipakai lagi otomatis tiap kali backend di-restart.
 
 Ini butuh dua penyesuaian di `ai_insight/generate_insight.py` supaya benar-benar berlaku tanpa restart: (1) `AI_PROVIDER` yang tadinya konstanta modul (dibaca SEKALI saat import -- proses lama tidak akan pernah melihat perubahan) diganti jadi `_current_provider()`, fungsi kecil yang baca `os.environ` FRESH tiap dipanggil; (2) client LLM di `api/main.py` di-cache satu kali per proses (`_ai_client_cache`, supaya tidak membangun ulang tiap request) -- endpoint `/admin/ai-key` & `/admin/ai-provider` sama-sama mengosongkan cache itu (`_reset_ai_client_cache()`) setelah menyimpan, supaya request `/insight/{id}` BERIKUTNYA membangun client baru dengan key/provider yang baru, bukan client lama yang sudah kadung di-cache.
 
-Kartu yang sama juga punya field **id model** (`CLAUDE_MODEL`/`GEMINI_MODEL`, endpoint `PUT /admin/ai-model`) -- bisa isi SATU id, atau LEBIH DARI SATU dipisah koma sebagai **fallback chain** (mis. `gemini-3.5-flash, gemini-2.5-flash, gemma-4-31b-it`). `_model_candidates()` di `generate_insight.py` mem-parse daftar itu, dan `panggil_claude()`/`panggil_gemini()` mencobanya BERURUTAN dalam satu request `/insight/{id}` yang sama -- kalau kandidat pertama gagal (model belum/tidak tersedia, kuota provider habis, balasan bukan JSON valid, dst), otomatis lanjut ke kandidat berikutnya sebelum benar-benar menyerah (error gabungan SEMUA percobaan baru dilempar kalau kandidat terakhir juga gagal). Id model TIDAK divalidasi di endpoint atau di kode ini -- katalog model tiap provider berubah dari waktu ke waktu (termasuk rilis yang belum diketahui saat kode ini ditulis), jadi validasinya diserahkan ke provider sendiri lewat respons error API yang sebenarnya, bukan dicek terhadap daftar hardcoded yang bisa diam-diam usang.
+Kartu yang sama juga punya field **id model** (`CLAUDE_MODEL`/`GEMINI_MODEL`/`OLLAMA_MODEL`, endpoint `PUT /admin/ai-model`) -- bisa isi SATU id, atau LEBIH DARI SATU dipisah koma sebagai **fallback chain** (mis. `gemini-3.5-flash, gemini-2.5-flash, gemma-4-31b-it`). `_model_candidates()` di `generate_insight.py` mem-parse daftar itu, dan `panggil_claude()`/`panggil_gemini()`/`panggil_ollama()` mencobanya BERURUTAN dalam satu request `/insight/{id}` yang sama -- kalau kandidat pertama gagal (model belum/tidak tersedia, kuota provider habis, balasan bukan JSON valid, dst), otomatis lanjut ke kandidat berikutnya sebelum benar-benar menyerah (error gabungan SEMUA percobaan baru dilempar kalau kandidat terakhir juga gagal). Id model TIDAK divalidasi di endpoint atau di kode ini -- katalog model tiap provider berubah dari waktu ke waktu (termasuk rilis yang belum diketahui saat kode ini ditulis), jadi validasinya diserahkan ke provider sendiri lewat respons error API yang sebenarnya, bukan dicek terhadap daftar hardcoded yang bisa diam-diam usang.
 
 **Environment Python backend & google-genai:** paket `anthropic` & `google-genai` butuh Python berbeda -- `google-genai` secara spesifik butuh **Python >= 3.10** (lihat komentar di `requirements.txt`), sementara environment dev yang divalidasi awalnya pakai Python 3.8 sistem. Kalau `python3` default di mesin Anda < 3.10, `pip install google-genai` akan gagal ("No matching distribution found") -- buat virtualenv terpisah dengan Python 3.10+ dan jalankan `uvicorn` dari situ, contoh (asumsi Python 3.12 tersedia lewat Homebrew):
 ```bash
@@ -339,11 +347,11 @@ deploy/
 
 **CI/CD** (`.github/workflows/`): `ci.yml` build-check kedua frontend + import-check backend tiap push/PR. `deploy.yml` SSH ke VPS dan jalankan `deploy/deploy.sh` tiap kali `ci.yml` di branch `main`/`master` sukses — baru aktif setelah secrets `VPS_HOST`/`VPS_USER`/`VPS_SSH_KEY` diisi di GitHub (lihat komentar di `deploy.yml` dan `deploy/README.md` langkah 2).
 
-**Kredensial produksi TIDAK pernah lewat git atau CI/CD** — `backend/.env.production`, `frontend/.env.production`, `frontend-admin/.env.production` (masing-masing ada `.env.production.example` sebagai template yang di-commit) di-copy manual sekali ke VPS lewat `scp`, lalu `ANTHROPIC_API_KEY`/`GEMINI_API_KEY` diisi **langsung di file itu di server** — supaya key tidak pernah transit lewat riwayat percakapan/CI mana pun. Checklist isinya (detail tiap field di masing-masing `.env.production.example`):
+**Kredensial produksi TIDAK pernah lewat git atau CI/CD** — `backend/.env.production`, `frontend/.env.production`, `frontend-admin/.env.production` (masing-masing ada `.env.production.example` sebagai template yang di-commit) di-copy manual sekali ke VPS lewat `scp`, lalu `ANTHROPIC_API_KEY`/`GEMINI_API_KEY`/`OLLAMA_API_KEY` diisi **langsung di file itu di server** — supaya key tidak pernah transit lewat riwayat percakapan/CI mana pun. Checklist isinya (detail tiap field di masing-masing `.env.production.example`):
 - `JWT_SECRET` — random panjang, API menolak start tanpa ini. JANGAN reuse nilai dev/lokal. (Sudah di-generate sekali untuk deployment pertama, lihat `backend/.env.production` lokal -- TIDAK di-commit.)
 - `CORS_ORIGINS` — domain **kedua** frontend asli, dipisah koma (dashboard utama + portal superadmin). Isi setelah domain/sslip.io VPS diketahui.
 - `VITE_API_BASE_URL` (di kedua frontend) — domain `api.conf`, isi setelah domain VPS diketahui.
-- `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` — kalau step 5 mau jalan sungguhan di server produksi.
+- `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `OLLAMA_API_KEY` — kalau step 5 mau jalan sungguhan di server produksi.
 - Backup `backend/auth/auth.db` secara terpisah dari `backend/data/output/` — regenerasi data (step 2-4) tidak menyentuhnya, tapi kehilangan disk/volume produksi akan menghapus akun juga kalau tidak di-backup.
 
 Urutan lengkap provisioning (server baru, DNS/sslip.io, systemd, nginx, certbot, akun pertama): lihat `deploy/README.md`.

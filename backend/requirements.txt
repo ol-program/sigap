@@ -13,3 +13,7 @@ pyjwt           # autentikasi: token sesi (JWT)
 
 # opsional, alternatif GRATIS untuk step 5 (AI_PROVIDER=gemini) -- butuh Python >= 3.10:
 # google-genai
+
+# opsional, alternatif untuk step 5 (AI_PROVIDER=ollama) -- Ollama Cloud API,
+# butuh OLLAMA_API_KEY dari https://ollama.com/settings/keys:
+# ollama

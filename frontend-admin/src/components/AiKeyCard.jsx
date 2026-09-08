@@ -87,6 +87,7 @@ export default function AiKeyCard() {
           <select value={providerChoice} onChange={(e) => setProviderChoice(e.target.value)}>
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="gemini">Google Gemini</option>
+            <option value="ollama">Ollama Cloud</option>
           </select>
         </div>
         <button type="submit" className="btn" disabled={savingProvider || providerChoice === status?.provider}>
@@ -136,7 +137,11 @@ export default function AiKeyCard() {
             type="password"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            placeholder={status?.env_name === "GEMINI_API_KEY" ? "AIza..." : "sk-ant-..."}
+            placeholder={
+              status?.env_name === "GEMINI_API_KEY" ? "AIza..." :
+              status?.env_name === "OLLAMA_API_KEY" ? "(dari ollama.com/settings/keys)" :
+              "sk-ant-..."
+            }
             required
           />
           <div className="field-hint">

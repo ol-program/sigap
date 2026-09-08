@@ -24,7 +24,7 @@ profil_wilayah (IDM simulasi) yang sudah ada sejak step 2 -- bukan integrasi
 API pemerintah sungguhan, karena seluruh dataset project ini memang simulasi
 (lihat README & docstring generate_data.py).
 
-Dua provider LLM didukung, dipilih lewat env var AI_PROVIDER (default
+Tiga provider LLM didukung, dipilih lewat env var AI_PROVIDER (default
 "anthropic"):
 
   AI_PROVIDER=anthropic (default) -- butuh ANTHROPIC_API_KEY:
@@ -37,10 +37,18 @@ Dua provider LLM didukung, dipilih lewat env var AI_PROVIDER (default
       export GEMINI_API_KEY=...          # dari https://aistudio.google.com/apikey
       pip install google-genai
 
-PROMPT_TEMPLATE sama persis untuk kedua provider -- yang beda cuma cara
-memanggil API-nya (lihat panggil_claude/panggil_gemini). Ini bukan
-integrasi terpisah per provider yang harus dirawat dua kali; cukup satu
-prompt, satu skema JSON, dua fungsi pemanggil tipis.
+  AI_PROVIDER=ollama -- Ollama Cloud API (https://ollama.com), butuh
+  OLLAMA_API_KEY. Dipanggil lewat HTTPS ke ollama.com (BUKAN server Ollama
+  lokal) memakai model *-cloud (default gemma4:cloud), jadi tidak perlu
+  install/`ollama serve` apa pun di server:
+      export AI_PROVIDER=ollama
+      export OLLAMA_API_KEY=...          # dari https://ollama.com/settings/keys
+      pip install ollama
+
+PROMPT_TEMPLATE sama persis untuk ketiga provider -- yang beda cuma cara
+memanggil API-nya (lihat panggil_claude/panggil_gemini/panggil_ollama). Ini
+bukan integrasi terpisah per provider yang harus dirawat berkali-kali;
+cukup satu prompt, satu skema JSON, fungsi pemanggil tipis per provider.
 
 MODE BATCH (script ini, lewat CLI) BUKAN satu-satunya cara insight dibuat.
 `build_client()` dan `generate_one()` di bawah SENGAJA dipisah dari main()
@@ -91,7 +99,14 @@ def _current_provider():
 
 CLAUDE_MODEL_DEFAULT = "claude-haiku-4-5-20251001"  # ringan & murah, cukup untuk narasi terstruktur
 GEMINI_MODEL_DEFAULT = "gemini-3.7-flash"  # per Agustus 2026 -- katalog model berubah dari waktu ke waktu
+OLLAMA_MODEL_DEFAULT = "gemma4:cloud"  # model cloud Ollama, lihat https://ollama.com/library
 MAX_TOKENS = 400
+
+_MODEL_ENV_BY_PROVIDER = {
+    "gemini": ("GEMINI_MODEL", GEMINI_MODEL_DEFAULT),
+    "ollama": ("OLLAMA_MODEL", OLLAMA_MODEL_DEFAULT),
+    "anthropic": ("CLAUDE_MODEL", CLAUDE_MODEL_DEFAULT),
+}
 
 
 def _model_candidates():
@@ -99,22 +114,20 @@ def _model_candidates():
     chain, bukan cuma satu id. Kalau model pertama gagal (kuota provider
     habis, model belum/tidak tersedia, balasannya bukan JSON valid, dst),
     otomatis coba model berikutnya di daftar sebelum benar-benar menyerah
-    -- lihat panggil_claude()/panggil_gemini(). Disimpan sebagai satu
-    string dipisah koma di env var GEMINI_MODEL/CLAUDE_MODEL (lihat
-    admin_set_ai_model di api/main.py -- portal Manajemen Akun bisa isi
-    lebih dari satu model dipisah koma), dibaca FRESH tiap dipanggil
-    (bukan konstanta modul) supaya berlaku seketika tanpa restart. Id
-    model API TIDAK divalidasi di sini (katalog model provider berubah
-    dari waktu ke waktu) -- kalau salah/tidak ada, provider sendiri yang
-    menolak lewat error API, dan fallback ke kandidat berikutnya baru
-    jalan kalau SEMUA kandidat gagal barulah errornya diteruskan (diringkas
-    ringkas_error_llm() di api/main.py)."""
-    if _current_provider() == "gemini":
-        raw = os.environ.get("GEMINI_MODEL", GEMINI_MODEL_DEFAULT)
-    else:
-        raw = os.environ.get("CLAUDE_MODEL", CLAUDE_MODEL_DEFAULT)
+    -- lihat panggil_claude()/panggil_gemini()/panggil_ollama(). Disimpan
+    sebagai satu string dipisah koma di env var GEMINI_MODEL/CLAUDE_MODEL/
+    OLLAMA_MODEL (lihat admin_set_ai_model di api/main.py -- portal
+    Manajemen Akun bisa isi lebih dari satu model dipisah koma), dibaca
+    FRESH tiap dipanggil (bukan konstanta modul) supaya berlaku seketika
+    tanpa restart. Id model API TIDAK divalidasi di sini (katalog model
+    provider berubah dari waktu ke waktu) -- kalau salah/tidak ada, provider
+    sendiri yang menolak lewat error API, dan fallback ke kandidat
+    berikutnya baru jalan kalau SEMUA kandidat gagal barulah errornya
+    diteruskan (diringkas ringkas_error_llm() di api/main.py)."""
+    env_name, default = _MODEL_ENV_BY_PROVIDER.get(_current_provider(), _MODEL_ENV_BY_PROVIDER["anthropic"])
+    raw = os.environ.get(env_name, default)
     kandidat = [m.strip() for m in raw.split(",") if m.strip()]
-    return kandidat or [GEMINI_MODEL_DEFAULT if _current_provider() == "gemini" else CLAUDE_MODEL_DEFAULT]
+    return kandidat or [default]
 
 PROMPT_TEMPLATE = """Anda asisten analisis untuk PMO yang mengawasi Koperasi Desa/Kelurahan Merah Putih (KDMP) di Indonesia.
 
@@ -229,9 +242,26 @@ def panggil_gemini(prompt, client):
             raise RuntimeError("Semua model gagal dicoba -- " + " | ".join(errors)) from e
 
 
+def panggil_ollama(prompt, client):
+    kandidat = _model_candidates()
+    errors = []
+    for i, model in enumerate(kandidat):
+        try:
+            resp = client.chat(model=model, messages=[{"role": "user", "content": prompt}])
+            return _parse_json_reply(resp["message"]["content"])
+        except Exception as e:
+            errors.append(f"{model}: {e}")
+            if i < len(kandidat) - 1:
+                continue
+            raise RuntimeError("Semua model gagal dicoba -- " + " | ".join(errors)) from e
+
+
 def panggil_llm(prompt, client):
-    if _current_provider() == "gemini":
+    provider = _current_provider()
+    if provider == "gemini":
         return panggil_gemini(prompt, client)
+    if provider == "ollama":
+        return panggil_ollama(prompt, client)
     return panggil_claude(prompt, client)
 
 
@@ -299,6 +329,19 @@ def build_client():
             )
         from google import genai
         return genai.Client()  # baca GEMINI_API_KEY dari environment otomatis
+    elif _current_provider() == "ollama":
+        if not os.environ.get("OLLAMA_API_KEY"):
+            raise RuntimeError(
+                "OLLAMA_API_KEY belum di-set di environment. Dapatkan API key di "
+                "https://ollama.com/settings/keys lalu export OLLAMA_API_KEY=..."
+            )
+        import ollama
+        # Selalu ke Ollama Cloud (ollama.com), BUKAN server Ollama lokal --
+        # OLLAMA_HOST bisa dioverride kalau memang ingin arahkan ke server
+        # sendiri, tapi defaultnya sengaja cloud supaya tidak perlu install/
+        # jalankan `ollama serve` apa pun di server backend ini.
+        host = os.environ.get("OLLAMA_HOST", "https://ollama.com")
+        return ollama.Client(host=host, headers={"Authorization": f"Bearer {os.environ['OLLAMA_API_KEY']}"})
     else:
         if not os.environ.get("ANTHROPIC_API_KEY"):
             raise RuntimeError(
@@ -341,7 +384,7 @@ def main():
         print(contoh)
         print("=" * 70)
         print(f"\n[dry-run] {len(df)} koperasi akan diproses kalau dijalankan tanpa --dry-run.")
-        print(f"Provider aktif: {_current_provider()} (ganti lewat env var AI_PROVIDER=anthropic|gemini).")
+        print(f"Provider aktif: {_current_provider()} (ganti lewat env var AI_PROVIDER=anthropic|gemini|ollama).")
         print("Data & prompt di atas valid -- tinggal set API key providernya untuk jalan sungguhan.")
         return
 

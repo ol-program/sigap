@@ -66,7 +66,7 @@ from ai_insight.generate_insight import build_client as build_ai_client
 from ai_insight.generate_insight import generate_one as generate_insight_one
 from ai_insight.generate_insight import load_context as load_insight_context
 from ai_insight.generate_insight import simpan as simpan_insight
-from ai_insight.generate_insight import CLAUDE_MODEL_DEFAULT, GEMINI_MODEL_DEFAULT
+from ai_insight.generate_insight import CLAUDE_MODEL_DEFAULT, GEMINI_MODEL_DEFAULT, OLLAMA_MODEL_DEFAULT
 
 if not JWT_SECRET:
     # Gagal SEKARANG (saat startup), bukan diam-diam sampai request pertama
@@ -237,19 +237,26 @@ class AiModelBody(BaseModel):
     model: str
 
 
+_AI_ENV_BY_PROVIDER = {
+    "gemini": ("GEMINI_API_KEY", "GEMINI_MODEL", GEMINI_MODEL_DEFAULT),
+    "ollama": ("OLLAMA_API_KEY", "OLLAMA_MODEL", OLLAMA_MODEL_DEFAULT),
+    "anthropic": ("ANTHROPIC_API_KEY", "CLAUDE_MODEL", CLAUDE_MODEL_DEFAULT),
+}
+
+
 def _ai_key_env_name() -> str:
     provider = os.environ.get("AI_PROVIDER", "anthropic").lower()
-    return "GEMINI_API_KEY" if provider == "gemini" else "ANTHROPIC_API_KEY"
+    return _AI_ENV_BY_PROVIDER.get(provider, _AI_ENV_BY_PROVIDER["anthropic"])[0]
 
 
 def _ai_model_env_name() -> str:
     provider = os.environ.get("AI_PROVIDER", "anthropic").lower()
-    return "GEMINI_MODEL" if provider == "gemini" else "CLAUDE_MODEL"
+    return _AI_ENV_BY_PROVIDER.get(provider, _AI_ENV_BY_PROVIDER["anthropic"])[1]
 
 
 def _ai_model_default() -> str:
     provider = os.environ.get("AI_PROVIDER", "anthropic").lower()
-    return GEMINI_MODEL_DEFAULT if provider == "gemini" else CLAUDE_MODEL_DEFAULT
+    return _AI_ENV_BY_PROVIDER.get(provider, _AI_ENV_BY_PROVIDER["anthropic"])[2]
 
 
 def _mask_key(value: str) -> str:
@@ -312,7 +319,7 @@ def admin_set_ai_key(body: AiKeyBody, superadmin: CurrentUser = Depends(get_supe
 
 @app.put("/admin/ai-provider")
 def admin_set_ai_provider(body: AiProviderBody, superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Ganti provider LLM aktif (anthropic/gemini) untuk AI Insight. Sama
+    """Ganti provider LLM aktif (anthropic/gemini/ollama) untuk AI Insight. Sama
     seperti /admin/ai-key: disimpan ke auth.db DAN langsung menimpa
     os.environ proses ini, berlaku seketika tanpa restart -- lihat
     _current_provider() di ai_insight/generate_insight.py yang baca
@@ -320,8 +327,8 @@ def admin_set_ai_provider(body: AiProviderBody, superadmin: CurrentUser = Depend
     saat import, seperti sebelumnya -- itu sebabnya dulu ganti provider
     butuh restart proses, sekarang tidak)."""
     provider = body.provider.strip().lower()
-    if provider not in ("anthropic", "gemini"):
-        raise HTTPException(status_code=422, detail="provider harus 'anthropic' atau 'gemini'.")
+    if provider not in ("anthropic", "gemini", "ollama"):
+        raise HTTPException(status_code=422, detail="provider harus 'anthropic', 'gemini', atau 'ollama'.")
     set_setting("AI_PROVIDER", provider)
     os.environ["AI_PROVIDER"] = provider
     _reset_ai_client_cache()
@@ -678,7 +685,7 @@ def list_notifikasi(status_tindak_lanjut: Optional[str] = None, koperasi_id: Opt
 
 
 def ringkas_error_llm(e):
-    """Error mentah dari SDK provider LLM (Anthropic/Gemini) berupa blob JSON
+    """Error mentah dari SDK provider LLM (Anthropic/Gemini/Ollama) berupa blob JSON
     panjang yang tidak enak ditampilkan ke pengguna dashboard. Dikenali
     beberapa pola umum (kuota habis, rate limit) jadi pesan Indonesia yang
     jelas & actionable; selain itu fallback ke potongan pesan asli (bukan
@@ -723,7 +730,7 @@ def get_insight(koperasi_id: str, periode: Optional[str] = None, user: CurrentUs
     bukan di-batch untuk seluruh koperasi di muka (lihat generate_insight.py).
 
     404 kalau koperasi tidak ada / di luar scope pmo. 503 kalau server belum
-    dikonfigurasi API key provider (ANTHROPIC_API_KEY/GEMINI_API_KEY). 502
+    dikonfigurasi API key provider (ANTHROPIC_API_KEY/GEMINI_API_KEY/OLLAMA_API_KEY). 502
     kalau panggilan LLM-nya sendiri gagal (rate limit, jaringan, dst)."""
     conn = get_conn()
     try:
