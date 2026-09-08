@@ -145,7 +145,7 @@ certbot --nginx \
 ```bash
 cd /opt/sigap-kopdes/backend
 /opt/uv-python/cpython-3.12/bin/python3.12 -m venv .venv312   # BUKAN ~/.local/bin/python3.12 -- lihat jebakan permission /root di langkah 1
-.venv312/bin/pip install -r requirements.txt google-genai
+.venv312/bin/pip install -r requirements.txt google-genai ollama
 chown -R www-data:www-data .venv312   # service jalan sebagai www-data, lihat systemd unit
 
 cp /opt/sigap-kopdes/deploy/systemd/sigap-kopdes-backend.service /etc/systemd/system/
