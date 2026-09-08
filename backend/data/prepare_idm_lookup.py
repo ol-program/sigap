@@ -1,27 +1,17 @@
 """
 SIGAP Kopdes - Ekstraksi Data IDM Asli (persiapan untuk step 2)
-==================================================================
-Script SEKALI-JALAN (bukan bagian pipeline reguler) yang mengambil baris
-relevan dari data resmi Indeks Desa Membangun (IDM) 2024 hasil pemutakhiran
-Kemendes PDTT -- diberikan pengguna sebagai file Excel -- dan menulis hasil
-saringannya ke CSV kecil (`idm_2024_lookup.csv`) yang dibaca `generate_data.py`
-tiap kali dijalankan. Dipisah dari `generate_data.py` supaya pipeline reguler
-tidak butuh `openpyxl` atau membaca file 7+ MB tiap kali di-generate ulang --
-cukup baca CSV hasil saringan yang jauh lebih kecil.
 
-KENAPA CUMA SEBAGIAN KABUPATEN/KOTA YANG DAPAT DATA ASLI: IDM secara
-definisi HANYA mencakup DESA (kewenangan Kemendes PDTT), bukan KELURAHAN
-(wilayah administratif kota, kewenangan Kemendagri). Dari 21 kabupaten/kota
-di WILAYAH_SEED (generate_data.py), 8 di antaranya berstatus "Kota" yang
-sebagian besar/seluruh wilayahnya kelurahan -- otomatis TIDAK ADA di data
-IDM. 13 kabupaten sisanya (yang memang berstatus "Kabupaten", terdiri dari
-desa) SEMUANYA ditemukan di data IDM dengan puluhan-ratusan desa per
-kabupaten -- jauh lebih dari 9 yang dibutuhkan (n_koperasi maksimum per
-wilayah). Ini bukan keterbatasan teknis yang disembunyikan, tapi cerminan
-struktur pemerintahan asli -- baik disebutkan apa adanya ke juri.
+Script sekali-jalan yang menyaring baris relevan dari data resmi Indeks Desa
+Membangun (IDM) 2024, Kemendes PDTT (file Excel) ke CSV kecil
+(idm_2024_lookup.csv) yang dibaca generate_data.py. Dipisah dari
+generate_data.py supaya pipeline reguler tidak butuh openpyxl atau membaca
+file Excel 7+ MB tiap kali data di-generate ulang.
 
-Data ini per 2024 (bukan tahun berjalan) -- disebutkan apa adanya di
-docstring generate_data.py juga, bukan diklaim "real-time".
+Cuma 13 dari 21 kabupaten/kota di WILAYAH_SEED yang dapat data asli -- IDM
+secara definisi hanya mencakup desa (kewenangan Kemendes PDTT), bukan
+kelurahan (wilayah kota, kewenangan Kemendagri), jadi 8 kabupaten/kota
+berstatus "Kota" otomatis tidak ada di data IDM. Data ini per 2024, bukan
+tahun berjalan.
 
 Usage:
     python prepare_idm_lookup.py "/path/ke/indeks-desa-membangun-....xlsx"
@@ -38,10 +28,8 @@ import csv
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_CSV = os.path.join(HERE, "idm_2024_lookup.csv")
 
-# kabupaten_kota (gaya penamaan WILAYAH_SEED di generate_data.py) ->
-# (NAMA_PROVINSI, NAMA_KABUPATEN) persis seperti tertulis di file IDM sumber.
-# HANYA 13 kabupaten -- 8 "Kota" di WILAYAH_SEED sengaja tidak dipetakan
-# (lihat alasan di docstring modul ini).
+# kabupaten_kota (gaya WILAYAH_SEED) -> (NAMA_PROVINSI, NAMA_KABUPATEN) persis
+# seperti di file IDM sumber. Hanya 13 kabupaten -- lihat docstring modul.
 KABUPATEN_MAP = {
     "Kab. Bandung": ("JAWA BARAT", "BANDUNG"),
     "Kab. Cianjur": ("JAWA BARAT", "CIANJUR"),

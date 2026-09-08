@@ -5,18 +5,13 @@ function toList(val) {
   return Array.isArray(val) ? val : [val];
 }
 
-// AI Insight dibuat ON-DEMAND, bukan di-batch untuk semua koperasi di muka:
-// kalau `initial` (dari respons /koperasi/{id}) kosong, komponen ini memanggil
-// GET /insight/{id} sendiri -- backend akan generate saat itu juga (realtime,
-// ~2-15 detik tergantung provider) kalau belum pernah dibuat, lalu menyimpannya
-// supaya kunjungan berikutnya ke koperasi yang sama langsung dari cache.
+// Kalau `initial` kosong, panggil GET /insight/{id} -- backend generate
+// on-demand (realtime) kalau belum pernah dibuat, lalu cache untuk kunjungan berikutnya.
 export default function AiInsightCard({ koperasiId, initial }) {
   const [insight, setInsight] = useState(initial || null);
   const [loading, setLoading] = useState(!initial);
   const [error, setError] = useState(null);
-  // Animasi "muncul" cuma untuk hasil yang BARU selesai di-generate di sesi
-  // ini -- kalau sudah dari cache (initial), tampil langsung tanpa animasi
-  // supaya tidak berkedip tiap kali halaman dibuka ulang.
+  // Animasi reveal cuma untuk hasil baru, bukan yang sudah dari cache (initial).
   const [justGenerated, setJustGenerated] = useState(false);
 
   useEffect(() => {
@@ -54,15 +49,12 @@ export default function AiInsightCard({ koperasiId, initial }) {
   }
 
   if (error) {
-    // error.message sudah kalimat lengkap siap-tampil dari backend (lihat
-    // ringkas_error_llm() di api/main.py) -- jangan ditambah prefix lagi di
-    // sini, dulu sempat dobel jadi "Gagal membuat AI insight: Gagal..." saat
-    // kuota Gemini gratis benar-benar habis di pengujian.
+    // error.message sudah kalimat lengkap siap-tampil dari backend -- jangan ditambah prefix lagi.
     const belumDikonfigurasi = error.status === 503;
     return (
       <p className="page-desc" style={{ margin: 0 }}>
         {belumDikonfigurasi
-          ? "AI insight belum bisa dibuat otomatis -- server belum dikonfigurasi API key provider LLM (ANTHROPIC_API_KEY atau GEMINI_API_KEY)."
+          ? "AI insight belum bisa dibuat otomatis -- server belum dikonfigurasi API key provider LLM (ANTHROPIC_API_KEY, GEMINI_API_KEY, atau OLLAMA_API_KEY)."
           : error.message}
       </p>
     );
@@ -72,10 +64,7 @@ export default function AiInsightCard({ koperasiId, initial }) {
     return <p className="page-desc" style={{ margin: 0 }}>Belum ada AI insight untuk koperasi ini.</p>;
   }
 
-  // Satu section terstruktur (bukan 5 kotak bersarang terpisah) -- narasi
-  // jadi pengantar tanpa kotak, lalu dua rekomendasi singkat berdampingan,
-  // lalu dua daftar (produk & program) berdampingan. Reveal animation tetap
-  // stagger per bagian saat baru selesai di-generate (bukan dari cache).
+  // Reveal animation stagger per bagian saat baru selesai di-generate.
   const revealStyle = (i) => (justGenerated ? { animationDelay: `${i * 80}ms` } : undefined);
   const revealCls = justGenerated ? " insight-reveal" : "";
 

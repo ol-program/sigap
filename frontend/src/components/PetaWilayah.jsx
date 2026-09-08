@@ -7,9 +7,7 @@ import { statusHex } from "../statusColors.js";
 
 const INDONESIA_CENTER = [-2.5, 118];
 
-// react-leaflet tidak re-center peta otomatis kalau prop center berubah
-// setelah mount pertama -- komponen ini yang men-trigger flyTo tiap kali
-// level drill-down berpindah.
+// react-leaflet tidak re-center otomatis kalau center berubah setelah mount.
 function FlyTo({ center, zoom }) {
   const map = useMap();
   useEffect(() => {
@@ -22,9 +20,7 @@ function radiusFor(jumlah) {
   return Math.min(36, 9 + Math.sqrt(jumlah || 1) * 4);
 }
 
-// Peta drill-down provinsi -> kabupaten/kota -> koperasi individual. Dipakai
-// sebagai bagian dari halaman Ringkasan (bukan halaman terpisah) supaya
-// gambaran agregat & sebaran geografis terlihat dalam satu layar.
+// Peta drill-down provinsi -> kabupaten/kota -> koperasi individual.
 export default function PetaWilayah() {
   const navigate = useNavigate();
   const [level, setLevel] = useState("provinsi"); // provinsi | kabupaten | koperasi

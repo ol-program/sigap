@@ -8,9 +8,7 @@ export default function NotifikasiPage() {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState(null);
 
-  // Nilai status_tindak_lanjut belum punya enum resmi di skema -- diambil
-  // dinamis dari data yang ada (saat ini semua "Baru", dari compute_scores.py)
-  // supaya filter ini tidak diam-diam salah kalau nilainya berubah nanti.
+  // status_tindak_lanjut belum punya enum resmi -- opsi filter diambil dari data yang ada.
   useEffect(() => {
     api.notifikasi().then((all) => {
       setStatusOptions([...new Set(all.map((n) => n.status_tindak_lanjut))]);

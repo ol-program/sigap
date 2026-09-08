@@ -13,10 +13,7 @@ export default function LoginPage({ onLoggedIn }) {
     setLoading(true);
     try {
       const res = await api.login(username, password);
-      // Role admin/pmo TIDAK punya urusan di sini -- portal ini murni
-      // manajemen akun, dashboard data koperasi ada di app terpisah
-      // (frontend/). Ditolak di sini SEBELUM token disimpan, meski
-      // kredensialnya sendiri valid.
+      // Portal ini murni manajemen akun -- role admin/pmo pakai dashboard di frontend/.
       if (res.role !== "superadmin") {
         setError("Akun ini bukan superadmin -- gunakan dashboard utama, bukan portal Manajemen Akun ini.");
         return;

@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api.js";
 
-// Semua angka ambang/bobot di halaman ini diambil dari /metodologi (bukan
-// di-hardcode) supaya penjelasan tidak pernah menyimpang dari rumus yang
-// benar-benar dipakai compute_scores.py & predict_risk.py -- lihat
-// backend/api/main.py.
+// Angka ambang/bobot diambil dari /metodologi, bukan di-hardcode, supaya
+// tidak menyimpang dari compute_scores.py & predict_risk.py.
 export default function MetodologiPage() {
   const [m, setM] = useState(null);
   const [error, setError] = useState(null);

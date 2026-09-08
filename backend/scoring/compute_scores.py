@@ -1,33 +1,22 @@
 """
 SIGAP Kopdes - Engine Skor Kesehatan (Step 3)
-================================================
-Membaca data mentah (transaksi, stok, laporan) hasil step 2, menghitung skor
-kesehatan komposit per koperasi PER PERIODE (bulan), lalu menyimpannya ke
-tabel skor_kesehatan. Juga menerbitkan notifikasi otomatis.
 
-Metodologi (baseline, bobot & ambang bisa diubah di konstanta bawah):
-  skor_transaksi  = rata-rata PERINGKAT PERSENTIL (bukan interpolasi nilai)
-                     dari jumlah transaksi dan total nilai transaksi,
-                     relatif terhadap seluruh koperasi pada periode yang sama
-  skor_stok       = peringkat persentil jumlah unit stok, relatif populasi
-  skor_pelaporan  = persen_kelengkapan laporan bulan itu (sudah skala 0-100,
-                     dipakai langsung -- bukan persentil, karena sudah
-                     punya makna absolut: 100% = laporan lengkap)
+Membaca data mentah (transaksi, stok, laporan) hasil step 2, menghitung skor
+kesehatan komposit per koperasi per periode (bulan), menyimpannya ke tabel
+skor_kesehatan, dan menerbitkan notifikasi otomatis.
+
+Metodologi (bobot & ambang di konstanta bawah):
+  skor_transaksi  = rata-rata peringkat persentil jumlah & total nilai
+                     transaksi, relatif terhadap koperasi lain di periode
+                     yang sama (persentil dipakai, bukan interpolasi linear,
+                     supaya tahan terhadap distribusi nilai yang skewed)
+  skor_stok       = peringkat persentil jumlah unit stok
+  skor_pelaporan  = persen_kelengkapan laporan (0-100, dipakai langsung)
   skor_komposit   = rata-rata terbobot ketiga skor di atas
   kategori        = Sehat (>=70) / Waspada (40-69) / Kritis (<40)
 
-Kenapa peringkat persentil (rank), bukan interpolasi linear antar-nilai
-persentil? Nilai rupiah transaksi biasanya right-skewed (banyak koperasi
-bernilai kecil, sedikit yang sangat besar) -- interpolasi linear akan
-condong ke angka rendah untuk mayoritas koperasi meski secara relatif
-posisinya biasa saja. Peringkat persentil (median populasi = skor 50,
-berapa pun bentuk distribusinya) menghindari distorsi ini. Konsekuensinya:
-skor ini tetap RELATIF terhadap populasi koperasi yang dipantau, bukan
-skala absolut universal -- hal ini penting untuk dijelaskan ke juri sebagai
-keterbatasan yang disadari, bukan disembunyikan.
-
-prediksi_risiko_3bln SENGAJA dikosongkan (None) di step ini -- itu tugas
-model prediktif di step 4, bukan rumus tetap di sini.
+Skor bersifat relatif terhadap populasi koperasi yang dipantau, bukan skala
+absolut. prediksi_risiko_3bln dikosongkan (None) di sini -- dihitung step 4.
 
 Usage:
     python compute_scores.py
@@ -52,9 +41,8 @@ TURUN_SIGNIFIKAN = 5  # poin -- pemicu notifikasi jika skor turun >= ini
 
 
 def load_tables():
-    # Catatan: generate_data.py (step 2) menulis semua kolom SQLite sebagai
-    # TEXT, jadi kolom numerik harus dikonversi eksplisit di sini -- kalau
-    # tidak, .sum()/.quantile() pandas akan memperlakukannya sebagai string.
+    # generate_data.py menulis semua kolom SQLite sebagai TEXT, jadi kolom
+    # numerik dikonversi eksplisit di bawah.
     conn = sqlite3.connect(DB_PATH)
     transaksi = pd.read_sql("SELECT * FROM transaksi", conn)
     stok = pd.read_sql("SELECT * FROM stok", conn)
@@ -69,16 +57,13 @@ def load_tables():
 
 
 def peringkat_persentil(basis, kolom):
-    """Ubah sebuah kolom jadi skor 0-100 berbasis PERINGKAT dalam periode
-    yang sama (median populasi selalu jadi ~50, apa pun bentuk distribusi
-    nilai mentahnya) -- lihat catatan di docstring modul."""
+    """Skor 0-100 berbasis peringkat kolom dalam periode yang sama."""
     return basis.groupby("periode")[kolom].rank(pct=True, method="average") * 100
 
 
 def siapkan_basis(transaksi, stok, laporan):
-    """Gabungkan tiga sumber data mentah jadi satu tabel (koperasi_id x
-    periode), memakai LAPORAN sebagai kerangka acuan karena setiap koperasi
-    mengirim laporan tiap bulan (bahkan koperasi yang nyaris tidak aktif)."""
+    """Gabungkan transaksi/stok/laporan jadi satu tabel (koperasi_id x
+    periode), memakai laporan sebagai kerangka acuan (dikirim tiap bulan)."""
     transaksi = transaksi.copy()
     transaksi["periode"] = transaksi["tanggal"].str.slice(0, 7)
     trans_agg = transaksi.groupby(["koperasi_id", "periode"]).agg(

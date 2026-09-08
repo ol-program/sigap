@@ -5,13 +5,8 @@ import { statusHex } from "../statusColors.js";
 const RADIUS = 54;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-// Highlight besar skor kesehatan komposit -- satu hero figure per halaman
-// (lihat skill dataviz: exactly one hero figure per view). Ring pakai warna
-// status (Sehat/Waspada/Kritis, sama seperti StatusBadge/peta) sebagai
-// AKSEN di sekitar angka, bukan pada angkanya sendiri -- teks tetap pakai
-// token teks biasa (text wears text tokens, never the series/status color),
-// identitas kategori dibawa oleh StatusBadge (dot + label) di sampingnya,
-// bukan warna ring saja.
+// Ring pakai warna status sebagai aksen; teks tetap token biasa, identitas
+// kategori dibawa oleh StatusBadge di sampingnya.
 export default function ScoreHighlight({ skor, kategori, previousSkor, prediksiRisiko }) {
   const pct = Math.max(0, Math.min(100, skor ?? 0));
   const offset = CIRCUMFERENCE * (1 - pct / 100);

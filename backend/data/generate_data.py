@@ -1,37 +1,17 @@
 """
 SIGAP Kopdes - Generator Data Simulasi
-========================================
-Menghasilkan data simulasi mengikuti skema (lihat skema_data_sigap_kopdes.mermaid):
-WILAYAH, PROFIL_WILAYAH, KOPERASI, TRANSAKSI, STOK, LAPORAN
 
-PENTING: seluruh data di sini SIMULASI untuk keperluan prototipe/demo kompetisi,
-bukan data KDMP asli. PROFIL_WILAYAH mensimulasikan struktur Indeks Desa
-Membangun (IDM, Kemendes PDTT) -- lihat komentar di dekat konstanta
-STATUS_IDM_WEIGHT. Setiap koperasi diberi "profil kesehatan" tersembunyi
-(_tier, _trend) yang HANYA dipakai untuk membangkitkan pola transaksi/stok/
-laporan yang realistis -- field ini tidak ditulis ke tabel KOPERASI karena
-bukan bagian dari skema resmi. Skor kesehatan sesungguhnya akan dihitung
-dari data mentah ini di step 3 (engine skor), bukan diinput langsung.
+Menghasilkan data simulasi untuk WILAYAH, PROFIL_WILAYAH, KOPERASI, TRANSAKSI,
+STOK, dan LAPORAN sesuai skema di skema_data_sigap_kopdes.mermaid.
 
-WILAYAH juga menyimpan latitude/longitude (lihat KABUPATEN_KOTA_COORD) untuk
-kebutuhan peta di dashboard (step 7) -- titik pusat kabupaten/kota ASLI
-(provinsi & kabupaten/kota di WILAYAH_SEED memang nama wilayah Indonesia
-sungguhan, hanya desa/kelurahan di bawahnya yang fiktif) dengan sebaran acak
-kecil per desa supaya titik-titiknya tidak bertumpuk di satu koordinat.
-
-PROFIL_WILAYAH TIDAK LAGI SEPENUHNYA SIMULASI: untuk 13 dari 21 kabupaten/kota
-di WILAYAH_SEED yang berstatus "Kabupaten", nama desa + dimensi sosial/
-ekonomi/lingkungan + status/skor IDM diambil dari data ASLI Indeks Desa
-Membangun 2024 (Kemendes PDTT, hasil pemutakhiran) -- lihat
-`idm_2024_lookup.csv` & `prepare_idm_lookup.py`. 8 kabupaten/kota sisanya
-berstatus "Kota" TETAP simulasi penuh (nama desa fiktif + IDM disimulasikan
-seperti sebelumnya) karena IDM secara definisi hanya mencakup DESA
-(kewenangan Kemendes PDTT), bukan KELURAHAN (wilayah kota, kewenangan
-Kemendagri) -- bukan keterbatasan yang disembunyikan, tapi cerminan struktur
-pemerintahan asli. Field lain di PROFIL_WILAYAH (mata_pencaharian_dominan,
-ekonomi_beragam, akses_pusat_perdagangan) TETAP simulasi untuk semua wilayah
-karena tidak ada di sumber IDM. Data operasional (TRANSAKSI/STOK/LAPORAN)
-tetap 100% simulasi seperti sebelumnya -- KDMP asli belum eksis di data ini.
+Data operasional (TRANSAKSI/STOK/LAPORAN) sepenuhnya simulasi -- KDMP asli
+belum ada di dataset ini. PROFIL_WILAYAH memakai data Indeks Desa Membangun
+(IDM) 2024 asli (Kemendes PDTT) untuk kabupaten yang tercakup (lihat
+idm_2024_lookup.csv, prepare_idm_lookup.py); kota (berbasis kelurahan, di
+luar cakupan IDM) dan field lain (mata pencaharian, akses pasar) tetap
+simulasi. Tiap koperasi punya profil tersembunyi (_tier, _trend, tidak
+ditulis ke tabel KOPERASI) yang membangkitkan pola transaksi/stok/laporan --
+skor kesehatan sesungguhnya dihitung dari data mentah ini di step 3.
 
 Usage:
     python generate_data.py
@@ -74,14 +54,9 @@ WILAYAH_SEED = {
     "Sumatera Barat": ["Kota Padang", "Kab. Agam"],
 }
 
-# Jumlah koperasi (KDMP) RIIL per provinsi, dari dashboard publik SIMKOPDES
-# (https://simkopdes.go.id/pers/dashboard, diakses 2026-09-04, status data
-# 04/09/2026) -- dipakai untuk MENGKALIBRASI PROPORSI jumlah koperasi
-# simulasi antar provinsi (provinsi besar dapat porsi lebih banyak), BUKAN
-# untuk menyalin angka aslinya: data operasional tetap 100% simulasi (lihat
-# catatan di awal modul), cuma sebarannya sekarang tidak lagi seragam acak
-# seperti sebelumnya (dulu tiap kabupaten dapat random.randint(5, 9) yang
-# sama, tidak peduli provinsinya Jawa Tengah atau Kalimantan Timur).
+# Jumlah KDMP riil per provinsi (SIMKOPDES, https://simkopdes.go.id/pers/dashboard,
+# per 2026-09-04) -- dipakai untuk mengkalibrasi proporsi koperasi simulasi
+# antar provinsi, bukan disalin sebagai angka final.
 SIMKOPDES_JUMLAH_KOPERASI_PROVINSI = {
     "Jawa Barat": 5970,
     "Jawa Timur": 8494,
@@ -93,11 +68,9 @@ SIMKOPDES_JUMLAH_KOPERASI_PROVINSI = {
     "Sumatera Barat": 1270,
 }
 
-# Floor tetap per kabupaten + anggaran "ekstra" yang dibagi antar-provinsi
-# sesuai proporsi riil di atas -- proporsi MURNI 1:1 ke angka SIMKOPDES akan
-# membuat provinsi terkecil (Kalimantan Timur, ~1/8 dari Jawa Tengah) cuma
-# kebagian 1-2 koperasi per kabupaten, terlalu tipis untuk pipeline skor &
-# prediksi risiko (step 3-4) punya variasi bulanan yang bermakna.
+# Floor tetap per kabupaten + anggaran ekstra dibagi proporsional per provinsi,
+# supaya provinsi terkecil tetap punya cukup koperasi untuk variasi bulanan
+# yang bermakna di step 3-4.
 KOPERASI_FLOOR_PER_KABUPATEN = 5
 KOPERASI_EXTRA_BUDGET = 90
 
@@ -119,11 +92,8 @@ def _target_koperasi_per_kabupaten():
 
 TARGET_KOPERASI_PER_KABUPATEN = _target_koperasi_per_kabupaten()
 
-# Titik pusat kabupaten/kota di atas -- PERKIRAAN untuk kebutuhan visualisasi
-# peta (step 7: drill-down provinsi -> kabupaten -> koperasi), BUKAN batas
-# administratif presisi. kabupaten_kota & provinsi di atas memang nama
-# wilayah asli Indonesia (hanya desa/kelurahan di bawahnya yang fiktif),
-# jadi titik pusat ini cukup akurat untuk menempatkan marker di peta demo.
+# Titik pusat kabupaten/kota (perkiraan, bukan batas administratif presisi)
+# untuk visualisasi peta di step 7.
 KABUPATEN_KOTA_COORD = {
     "Kab. Bandung": (-7.0281, 107.5350),
     "Kab. Cianjur": (-6.8168, 107.1425),
@@ -157,11 +127,9 @@ IDM_LOOKUP_CSV = os.path.join(HERE, "idm_2024_lookup.csv")
 
 
 def load_idm_pool():
-    """Muat desa asli hasil saringan `prepare_idm_lookup.py` (lihat docstring
-    modul), dikelompokkan per kabupaten_kota. Kosong (bukan error) kalau
-    CSV-nya belum pernah dibuat -- kabupaten yang harusnya dapat data asli
-    otomatis jatuh ke fallback simulasi penuh di gen_wilayah_dan_koperasi,
-    supaya generate_data.py tetap bisa jalan tanpa file IDM sumber."""
+    """Desa asli hasil saringan prepare_idm_lookup.py, dikelompokkan per
+    kabupaten_kota. Kosong kalau CSV belum ada -- kabupaten itu jatuh ke
+    fallback simulasi di gen_wilayah_dan_koperasi()."""
     pool = defaultdict(list)
     if not os.path.exists(IDM_LOOKUP_CSV):
         return pool
@@ -175,24 +143,21 @@ IDM_POOL = load_idm_pool()
 
 
 def ambil_desa_asli(kab):
-    """Pop satu desa ASLI acak (tanpa pengembalian, supaya tidak dipakai dua
-    kali di kabupaten yang sama) dari IDM_POOL, atau None kalau kabupaten ini
-    tidak punya data asli (kota berbasis kelurahan, atau CSV belum dibuat)."""
+    """Pop satu desa asli acak dari IDM_POOL[kab] (tanpa pengembalian), atau
+    None kalau kabupaten ini tidak punya data asli."""
     pool = IDM_POOL.get(kab)
     if not pool:
         return None
     idx = random.randrange(len(pool))
     return pool.pop(idx)
 
-# --- profil wilayah (mensimulasikan struktur Indeks Desa Membangun / IDM,
-# Kemendes PDTT -- dimensi sosial/ekonomi/lingkungan & 5 status kemajuan
-# desa) -- dipakai lapisan rekomendasi produk/promo, TERPISAH dari data
-# operasional koperasi di atas, supaya kedua sinyal ini tidak tercampur.
+# --- Profil wilayah: struktur IDM (dimensi sosial/ekonomi/lingkungan & 5
+# status kemajuan desa), dipakai lapisan rekomendasi produk/promo.
 STATUS_IDM_WEIGHT = {"Mandiri": 8, "Maju": 24, "Berkembang": 40, "Tertinggal": 22, "Sangat Tertinggal": 6}
 MATA_PENCAHARIAN = ["Pertanian", "Perikanan", "Perkebunan", "Peternakan", "Perdagangan", "Industri Kecil & Kerajinan", "Jasa & Pariwisata"]
 AKSES_PERDAGANGAN = ["Dekat (<30 menit)", "Sedang (30-60 menit)", "Jauh (>60 menit)"]
 
-# profil tersembunyi -> dipakai untuk membangkitkan data operasional yang realistis
+# Profil tersembunyi, dipakai untuk membangkitkan data operasional yang realistis.
 TIERS = {
     "tinggi":  dict(weight=42, trans_count=(20, 35), trans_val=(400_000, 3_000_000), stok_unit=(300, 900), lapor_pct=(80, 100)),
     "sedang":  dict(weight=35, trans_count=(10, 20), trans_val=(150_000, 900_000),   stok_unit=(120, 400), lapor_pct=(50, 82)),
@@ -213,21 +178,15 @@ def pick_tier(kecuali=None):
 
 
 def tier_pada_bulan(k, m_idx):
-    """Tier efektif suatu koperasi pada bulan ke-m_idx. Sebagian kecil
-    koperasi (PELUANG_GONCANGAN) mengalami "goncangan" -- tier berubah di
-    tengah jalan (mis. kepengurusan baru, guncangan pasar) -- supaya data
-    tidak semata mencerminkan satu profil tetap sepanjang 6 bulan. Ini
-    penting untuk step 4 (model prediksi): tanpa goncangan, memprediksi
-    3 bulan ke depan jadi nyaris trivial karena status tiap koperasi tidak
-    pernah benar-benar berubah golongan."""
+    """Tier efektif koperasi k pada bulan ke-m_idx (sebagian kecil koperasi
+    berubah tier di tengah jalan, lihat PELUANG_GONCANGAN)."""
     if k["_bulan_goncang"] is not None and m_idx >= k["_bulan_goncang"]:
         return TIERS[k["_tier_goncang"]]
     return TIERS[k["_tier"]]
 
 
 def trend_factor(trend, month_idx, n_months=6):
-    """Mengembalikan pengali 0.6-1.3 yang menggeser data sepanjang waktu
-    sesuai arah tren, supaya pola 6 bulan punya bentuk (bukan flat)."""
+    """Pengali 0.6-1.3 yang menggeser data sepanjang waktu sesuai arah tren."""
     progress = month_idx / (n_months - 1)  # 0..1
     if trend == "membaik":
         return 0.72 + 0.5 * progress
@@ -290,13 +249,9 @@ def gen_wilayah_dan_koperasi():
 
 
 def gen_profil_wilayah(wilayah_rows):
-    """status_idm/skor_idm/dimensi sosial-ekonomi-lingkungan: ASLI (dari
-    `_idm_asli`, hasil `prepare_idm_lookup.py`) untuk wilayah yang dapat
-    jatah desa asli, SIMULASI untuk sisanya (kota berbasis kelurahan --
-    lihat docstring modul). mata_pencaharian_dominan, ekonomi_beragam, dan
-    akses_pusat_perdagangan TETAP simulasi untuk semua wilayah (tidak ada
-    di sumber IDM) -- ekonomi_beragam & akses tetap dikorelasikan ke
-    skor_idm (asli maupun simulasi) supaya konsisten secara internal."""
+    """status_idm/skor_idm/dimensi sosial-ekonomi-lingkungan: asli (dari
+    w["_idm_asli"]) kalau tersedia, simulasi untuk sisanya. Field lain
+    (mata pencaharian, ekonomi_beragam, akses pasar) selalu simulasi."""
     rows = []
     for w in wilayah_rows:
         idm_asli = w["_idm_asli"]

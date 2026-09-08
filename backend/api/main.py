@@ -1,29 +1,18 @@
 """
 SIGAP Kopdes - Backend API (Step 6)
-======================================
-FastAPI read-only yang menyajikan hasil tiga engine sebelumnya -- skor
-kesehatan (step 3), prediksi risiko (step 4), AI insight (step 5) -- ke
-dashboard React (step 7). API ini TIDAK menghitung apa pun sendiri, murni
-query & serialisasi dari sigap_kopdes.db -- konsisten dengan prinsip di
-step 3-5: satu sumber kebenaran angka, bukan dihitung ulang berbeda-beda
-di tiap lapisan.
 
-Kenapa baca SQLite langsung tiap request, bukan load ke memori sekali di
-startup? Dataset prototipe ini kecil (< 1.000 baris skor_kesehatan) dan
-sigap_kopdes.db diregenerasi lewat pipeline batch (step 2-5), bukan lewat
-API ini -- jadi query langsung lebih sederhana daripada mengurus cache
-invalidation, dengan biaya performa yang bisa diabaikan pada skala ini.
+FastAPI read-only yang menyajikan hasil skor kesehatan (step 3), prediksi
+risiko (step 4), dan AI insight (step 5) ke dashboard React (step 7). Tidak
+menghitung apa pun sendiri, murni query & serialisasi dari sigap_kopdes.db.
 
-Tabel `ai_insight` (step 5) OPSIONAL: baru terisi kalau step 5 sudah
-pernah dijalankan sungguhan (bukan --dry-run) dengan ANTHROPIC_API_KEY
-milik Anda. Endpoint yang membacanya menoleransi tabel belum ada / baris
-belum ada (mengembalikan null), bukan error 500 -- supaya API tetap bisa
-dipakai untuk demo skor & prediksi walau step 5 belum dijalankan.
+Baca SQLite langsung tiap request (bukan load ke memori) -- dataset kecil
+dan sigap_kopdes.db diregenerasi lewat pipeline batch, bukan lewat API ini.
 
-SEMUA endpoint data di bawah (kecuali "/" dan "/auth/login") butuh login --
-lihat backend/auth/auth.py & README bagian "Autentikasi & Otorisasi" untuk
-kenapa ini ditambahkan (data sensitif + API ini akan publik di step 8) dan
-bagaimana scope per-wilayah untuk role "pmo" diterapkan di lapisan SQL.
+Tabel ai_insight opsional: baru terisi kalau step 5 sudah dijalankan.
+Endpoint yang membacanya menoleransi tabel/baris belum ada (null, bukan 500).
+
+Semua endpoint data (kecuali "/" dan "/auth/login") butuh login -- lihat
+backend/auth/auth.py untuk scope per-wilayah role "pmo".
 
 Usage:
     cd backend
@@ -115,12 +104,8 @@ init_auth_db()
 init_settings_db()
 load_settings_into_environ()
 
-# CORS_ORIGINS dari environment (daftar dipisah koma), default localhost:5173
-# untuk dev -- SENGAJA tidak wildcard "*" (beda dari draf awal step 6):
-# API ini sekarang butuh Authorization header berisi kredensial sesi, dan
-# wildcard CORS + endpoint terautentikasi adalah kombinasi yang lebih mudah
-# disalahgunakan lintas-origin. Set CORS_ORIGINS ke domain frontend asli
-# begitu deployment (step 8) sudah punya URL final.
+# CORS_ORIGINS dari environment (dipisah koma) -- sengaja tidak wildcard "*",
+# karena endpoint di sini butuh Authorization header berisi kredensial sesi.
 _cors_origins = os.environ.get("CORS_ORIGINS", "http://localhost:5173").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -138,12 +123,8 @@ class LoginBody(BaseModel):
 @app.post("/auth/login")
 def login(body: LoginBody):
     """Login dengan username+password, kembalikan JWT (berlaku 8 jam).
-    Sertakan token ini sebagai header `Authorization: Bearer <token>` di
-    semua request endpoint lain. Akun dibuat lewat `auth/create_user.py`
-    atau dashboard Manajemen Akun (admin) -- tidak ada registrasi mandiri
-    (lihat README). `must_change_password` true berarti frontend harus
-    mengarahkan user ke halaman ganti password SEBELUM apa pun lain --
-    endpoint data lain akan menolak (403) selama itu belum dilakukan."""
+    `must_change_password` true berarti endpoint data lain menolak (403)
+    sampai user ganti password."""
     user = authenticate(body.username, body.password)
     token = create_access_token(user)
     scope = [s for s in user["kode_wilayah_scope"].split(",") if s]
@@ -187,15 +168,9 @@ class ResetPasswordBody(BaseModel):
 
 
 def _validate_role_scope(role: str, kabupaten_list: list) -> list:
-    # role 'superadmin' SENGAJA tidak diterima di sini -- sistem ini cuma
-    # boleh punya SATU superadmin, selamanya. Kalau boleh dibuat/diubah
-    # lewat endpoint ini, superadmin yang sedang login bisa membuat
-    # superadmin lain (privilege escalation lewat akun yang sudah mereka
-    # kontrol -- bukan cuma soal "kehabisan", tapi soal jumlahnya BISA
-    # bertambah tanpa batas). Satu-satunya superadmin dibuat SEKALI lewat
-    # CLI saat bootstrap (backend/auth/create_user.py --role superadmin),
-    # yang butuh akses shell/server -- batas kepercayaan yang jauh lebih
-    # tinggi daripada "sedang login sebagai superadmin lewat browser".
+    # role 'superadmin' sengaja tidak diterima -- hanya boleh dibuat sekali
+    # lewat CLI bootstrap (create_user.py), supaya superadmin yang login
+    # lewat browser tidak bisa membuat superadmin lain (privilege escalation).
     if role not in ("admin", "pmo"):
         raise HTTPException(
             status_code=422,
@@ -203,9 +178,6 @@ def _validate_role_scope(role: str, kabupaten_list: list) -> list:
                    "(cuma boleh ada satu, dibuat sekali lewat CLI saat bootstrap).",
         )
     if role == "pmo" and not kabupaten_list:
-        # Sama seperti create_user.py CLI: pmo tanpa scope tidak akan bisa
-        # lihat data apa pun (fail closed) -- lebih baik ditolak di sini
-        # daripada admin lupa dan membuat akun yang diam-diam tidak berguna.
         raise HTTPException(status_code=422, detail="Role pmo butuh minimal satu kabupaten/kota.")
     if role == "admin":
         return []
@@ -266,25 +238,15 @@ def _mask_key(value: str) -> str:
 
 
 def _reset_ai_client_cache():
-    # _ai_client_cache didefinisikan di bawah (dipakai get_ai_client() untuk
-    # endpoint /insight/{id}) -- direferensikan di sini dengan nama yang
-    # sama karena semua ini satu modul, sudah selesai dimuat sebelum ada
-    # request masuk (lihat get_conn() yang juga dirujuk dari endpoint di
-    # atas definisinya). Client LLM di-cache SEKALI per proses (konstruksi
-    # client, bukan API key/providernya, yang mahal untuk diulang) -- kalau
-    # tidak di-reset di sini, ganti key/provider lewat endpoint di bawah
-    # TIDAK akan berlaku (endpoint /insight/{id} tetap pakai client lama
-    # yang sudah di-cache dengan key/provider LAMA).
+    # Client LLM di-cache sekali per proses (lihat get_ai_client()) -- harus
+    # dikosongkan di sini supaya ganti key/provider langsung berlaku.
     _ai_client_cache.pop("client", None)
 
 
 @app.get("/admin/ai-key")
 def admin_get_ai_key(superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Status API key provider AI Insight yang AKTIF sekarang. Key aslinya
-    TIDAK PERNAH dikirim balik utuh ke frontend, cuma status ada/tidak +
-    potongan depan-belakang (buat verifikasi visual "sudah ganti key yang
-    benar?"), supaya key yang sudah tersimpan tidak bisa dicuri lewat
-    endpoint ini sendiri."""
+    """Status API key provider AI Insight aktif -- key aslinya tidak pernah
+    dikirim balik utuh, cuma status ada/tidak + potongan depan-belakang."""
     env_name = _ai_key_env_name()
     current = os.environ.get(env_name)
     model_env_name = _ai_model_env_name()
@@ -301,12 +263,8 @@ def admin_get_ai_key(superadmin: CurrentUser = Depends(get_superadmin_user)):
 
 @app.put("/admin/ai-key")
 def admin_set_ai_key(body: AiKeyBody, superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Ganti API key provider AI Insight yang AKTIF SEKARANG (lihat
-    /admin/ai-provider untuk ganti provider-nya). Disimpan ke auth.db
-    (survive restart -- lihat settings_store.py) DAN langsung menimpa
-    os.environ proses ini (berlaku SEKETIKA tanpa restart, karena
-    build_client() di ai_insight/generate_insight.py baca os.environ FRESH
-    tiap dipanggil, bukan di-cache saat import)."""
+    """Ganti API key provider aktif -- disimpan ke auth.db (survive restart)
+    dan langsung menimpa os.environ (berlaku seketika, lihat settings_store.py)."""
     api_key = body.api_key.strip()
     if not api_key:
         raise HTTPException(status_code=422, detail="API key tidak boleh kosong.")
@@ -319,13 +277,8 @@ def admin_set_ai_key(body: AiKeyBody, superadmin: CurrentUser = Depends(get_supe
 
 @app.put("/admin/ai-provider")
 def admin_set_ai_provider(body: AiProviderBody, superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Ganti provider LLM aktif (anthropic/gemini/ollama) untuk AI Insight. Sama
-    seperti /admin/ai-key: disimpan ke auth.db DAN langsung menimpa
-    os.environ proses ini, berlaku seketika tanpa restart -- lihat
-    _current_provider() di ai_insight/generate_insight.py yang baca
-    AI_PROVIDER fresh tiap dipanggil (BUKAN konstanta modul yang di-cache
-    saat import, seperti sebelumnya -- itu sebabnya dulu ganti provider
-    butuh restart proses, sekarang tidak)."""
+    """Ganti provider LLM aktif (anthropic/gemini/ollama) -- sama seperti
+    /admin/ai-key, berlaku seketika tanpa restart."""
     provider = body.provider.strip().lower()
     if provider not in ("anthropic", "gemini", "ollama"):
         raise HTTPException(status_code=422, detail="provider harus 'anthropic', 'gemini', atau 'ollama'.")
@@ -337,17 +290,9 @@ def admin_set_ai_provider(body: AiProviderBody, superadmin: CurrentUser = Depend
 
 @app.put("/admin/ai-model")
 def admin_set_ai_model(body: AiModelBody, superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Ganti id model (atau daftar id model dipisah koma -- fallback chain,
-    lihat _model_candidates() di ai_insight/generate_insight.py) untuk
-    provider AI Insight yang AKTIF SEKARANG. Kalau lebih dari satu, dicoba
-    BERURUTAN: model pertama gagal (kuota habis, model tidak ada, dst)
-    otomatis lanjut ke model berikutnya sebelum benar-benar menyerah. Tiap
-    id TIDAK divalidasi di sini (katalog model provider berubah dari waktu
-    ke waktu, termasuk rilis yang belum diketahui saat kode ini ditulis) --
-    kalau salah/tidak ada, provider sendiri yang menolak lewat error API
-    biasa. Sama seperti /admin/ai-key & /admin/ai-provider: disimpan ke
-    auth.db DAN langsung menimpa os.environ, berlaku seketika tanpa
-    restart."""
+    """Ganti id model (atau daftar dipisah koma sebagai fallback chain, lihat
+    _model_candidates()) untuk provider aktif. Id tidak divalidasi di sini --
+    provider sendiri yang menolak lewat error API kalau salah/tidak ada."""
     model = body.model.strip()
     if not model:
         raise HTTPException(status_code=422, detail="Id model tidak boleh kosong.")
@@ -359,14 +304,8 @@ def admin_set_ai_model(body: AiModelBody, superadmin: CurrentUser = Depends(get_
 
 @app.get("/admin/kabupaten")
 def admin_list_kabupaten(superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Daftar nama kabupaten/kota SAJA (bukan wilayah/koperasi) -- dipakai
-    form Tambah/Edit Akun buat pilih scope PMO. Endpoint TERPISAH dari
-    /wilayah (yang butuh get_active_user + scope_clause dan karena itu
-    balik KOSONG untuk superadmin, fail closed) -- superadmin memang tidak
-    boleh lihat data koperasi/wilayah sama sekali, tapi tetap perlu tahu
-    NAMA kabupaten/kota yang ada supaya bisa pilih scope PMO tanpa mengetik
-    manual (rawan salah ketik -- lihat resolve_kabupaten di auth/auth.py
-    yang match persis by name)."""
+    """Daftar nama kabupaten/kota untuk form Tambah/Edit Akun (pilih scope
+    PMO). Terpisah dari /wilayah, yang fail closed untuk superadmin."""
     conn = get_conn()
     try:
         rows = conn.execute("SELECT DISTINCT kabupaten_kota FROM wilayah ORDER BY kabupaten_kota").fetchall()
@@ -377,10 +316,8 @@ def admin_list_kabupaten(superadmin: CurrentUser = Depends(get_superadmin_user))
 
 @app.get("/admin/users")
 def admin_list_users(superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Daftar semua akun -- untuk dashboard Manajemen Akun. kode_wilayah_scope
-    mentah TIDAK dikirim ke frontend (bisa ribuan kode) -- diringkas jadi
-    daftar nama kabupaten/kota (kabupaten_list) yang lebih enak dibaca &
-    diedit ulang."""
+    """Daftar semua akun. kode_wilayah_scope diringkas jadi kabupaten_list
+    (nama kabupaten/kota) alih-alih dikirim mentah (bisa ribuan kode)."""
     users = list_users()
     conn = get_conn()
     try:
@@ -397,9 +334,8 @@ def admin_list_users(superadmin: CurrentUser = Depends(get_superadmin_user)):
 
 @app.post("/admin/users")
 def admin_create_user(body: CreateUserBody, superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Buat akun baru. Password dipilih superadmin di sini, jadi akun baru
-    SELALU dibuat dengan must_change_password=true (lihat
-    create_user_record) -- pemiliknya wajib menggantinya di login pertama."""
+    """Buat akun baru dengan must_change_password=true (password dipilih
+    superadmin, pemiliknya wajib menggantinya di login pertama)."""
     username = body.username.strip()
     if not username:
         raise HTTPException(status_code=422, detail="Username wajib diisi.")
@@ -419,12 +355,6 @@ def admin_update_user(username: str, body: UpdateUserBody, superadmin: CurrentUs
     if target is None:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
     if target["role"] == "superadmin":
-        # Termasuk akun superadmin yang sedang login sendiri -- tidak ada
-        # role tujuan yang valid buat akun ini lewat endpoint ini (role
-        # 'superadmin' ditolak _validate_role_scope, dan menurunkannya ke
-        # admin/pmo lewat sini berarti sistem BISA berakhir tanpa
-        # superadmin sama sekali). Satu-satunya superadmin memang sengaja
-        # tidak bisa diubah lewat portal ini -- lihat auth/create_user.py.
         raise HTTPException(
             status_code=400,
             detail="Akun superadmin tidak bisa diubah lewat sini -- gunakan CLI (backend/auth/create_user.py) kalau memang perlu.",
@@ -436,10 +366,8 @@ def admin_update_user(username: str, body: UpdateUserBody, superadmin: CurrentUs
 
 @app.post("/admin/users/{username}/reset-password")
 def admin_reset_user_password(username: str, body: ResetPasswordBody, superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Set password baru untuk akun lain (mis. lupa password) -- SELALU
-    menyalakan lagi must_change_password (lihat admin_reset_password),
-    karena superadmin di sini yang tahu password barunya, bukan pemilik
-    akun."""
+    """Set password baru untuk akun lain -- menyalakan lagi
+    must_change_password (superadmin di sini yang tahu password barunya)."""
     if get_user(username) is None:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
     try:
@@ -451,10 +379,7 @@ def admin_reset_user_password(username: str, body: ResetPasswordBody, superadmin
 
 @app.delete("/admin/users/{username}")
 def admin_delete_user(username: str, superadmin: CurrentUser = Depends(get_superadmin_user)):
-    """Hapus akun. Akun superadmin (termasuk akun sendiri -- sistem ini
-    cuma boleh punya satu, jadi username yang bukan superadmin.username
-    pun tidak akan pernah punya role superadmin) tidak bisa dihapus lewat
-    sini -- gunakan akses langsung ke database kalau memang perlu."""
+    """Hapus akun. Akun superadmin tidak bisa dihapus lewat sini."""
     target = get_user(username)
     if target is None:
         raise HTTPException(status_code=404, detail="Akun tidak ditemukan.")
@@ -581,10 +506,9 @@ def list_koperasi(kategori: Optional[str] = None, kode_wilayah: Optional[str] = 
 
 @app.get("/koperasi/{koperasi_id}")
 def detail_koperasi(koperasi_id: str, user: CurrentUser = Depends(get_active_user)):
-    """Detail satu koperasi: profil, histori skor semua periode, dan AI insight terbaru (jika ada).
-    404 juga dikembalikan kalau koperasi ada tapi DI LUAR scope wilayah pmo --
-    disatukan dengan "tidak ditemukan" (bukan 403) supaya tidak membocorkan
-    ke pmo bahwa koperasi_id tsb sebenarnya ada di wilayah lain."""
+    """Detail satu koperasi: profil, histori skor, dan AI insight terbaru.
+    404 juga untuk koperasi di luar scope pmo (bukan 403, supaya tidak
+    membocorkan bahwa koperasi_id itu ada di wilayah lain)."""
     conn = get_conn()
     try:
         clause, scope_params = scope_clause(user, "w")
@@ -685,14 +609,8 @@ def list_notifikasi(status_tindak_lanjut: Optional[str] = None, koperasi_id: Opt
 
 
 def ringkas_error_llm(e):
-    """Error mentah dari SDK provider LLM (Anthropic/Gemini/Ollama) berupa blob JSON
-    panjang yang tidak enak ditampilkan ke pengguna dashboard. Dikenali
-    beberapa pola umum (kuota habis, rate limit) jadi pesan Indonesia yang
-    jelas & actionable; selain itu fallback ke potongan pesan asli (bukan
-    seluruh traceback/dict provider) -- ditemukan penting saat kuota gratis
-    Gemini (20 request/hari untuk gemini-3.7-flash) sungguhan habis saat
-    pengujian dan pesannya awalnya jadi dump JSON mentah + prefix dobel
-    (backend & frontend sama-sama menambahkan "Gagal membuat AI insight:")."""
+    """Ringkas error mentah SDK provider LLM jadi pesan Indonesia yang jelas
+    (pola kuota/rate-limit dikenali khusus), fallback ke potongan pesan asli."""
     teks = str(e)
     rendah = teks.lower()
     if "429" in teks or "quota" in rendah or "rate" in rendah or "too_many_requests" in rendah:
@@ -708,10 +626,8 @@ _ai_client_cache = {}
 
 
 def get_ai_client():
-    """Client provider LLM aktif, dibuat sekali per proses lalu dipakai ulang
-    (bukan sekali per request -- konstruksinya murah tapi tidak perlu diulang).
-    Melempar RuntimeError kalau API key belum di-set, ditangkap pemanggil jadi
-    HTTPException 503 (bukan 500) -- ini kegagalan KONFIGURASI, bukan bug."""
+    """Client provider LLM aktif, dibuat sekali per proses. Melempar
+    RuntimeError kalau API key belum di-set, ditangkap pemanggil jadi 503."""
     if "client" not in _ai_client_cache:
         _ai_client_cache["client"] = build_ai_client()
     return _ai_client_cache["client"]
@@ -719,19 +635,10 @@ def get_ai_client():
 
 @app.get("/insight/{koperasi_id}")
 def get_insight(koperasi_id: str, periode: Optional[str] = None, user: CurrentUser = Depends(get_active_user)):
-    """AI insight (narasi + rekomendasi) untuk satu koperasi.
-
-    Kalau sudah pernah dibuat (step 5 batch ATAU dipanggil sebelumnya lewat
-    endpoint ini), dikembalikan langsung dari cache di tabel ai_insight --
-    TANPA memanggil LLM lagi. Kalau BELUM ada, di-generate ON-DEMAND di sini
-    juga (realtime, ~2-5 detik) lalu disimpan supaya request berikutnya untuk
-    koperasi yang sama tidak perlu panggil LLM ulang. Ini prinsip utamanya:
-    kuota API cuma terpakai untuk koperasi yang SUNGGUH dibuka penggunanya,
-    bukan di-batch untuk seluruh koperasi di muka (lihat generate_insight.py).
-
-    404 kalau koperasi tidak ada / di luar scope pmo. 503 kalau server belum
-    dikonfigurasi API key provider (ANTHROPIC_API_KEY/GEMINI_API_KEY/OLLAMA_API_KEY). 502
-    kalau panggilan LLM-nya sendiri gagal (rate limit, jaringan, dst)."""
+    """AI insight (narasi + rekomendasi) untuk satu koperasi -- dari cache
+    (tabel ai_insight) kalau sudah ada, atau di-generate on-demand & disimpan
+    kalau belum. 404 kalau koperasi tidak ada/di luar scope, 503 kalau API
+    key provider belum dikonfigurasi, 502 kalau panggilan LLM gagal."""
     conn = get_conn()
     try:
         clause, scope_params = scope_clause(user, "k")
@@ -794,9 +701,7 @@ def ringkasan(periode: Optional[str] = None, user: CurrentUser = Depends(get_act
             JOIN koperasi k ON k.koperasi_id = s.koperasi_id
             WHERE s.periode = ? {clause}
         """, [p, *scope_params]).fetchone()
-        # "Baru" adalah status awal yang ditulis compute_scores.py (step 3) untuk
-        # SETIAP notifikasi yang diterbitkan -- belum ada alur di sistem ini yang
-        # mengubah status_tindak_lanjut ke nilai lain, jadi "Baru" == belum ditindaklanjuti.
+        # "Baru" == belum ditindaklanjuti (status awal dari compute_scores.py).
         notif_belum = conn.execute(f"""
             SELECT COUNT(*) AS jumlah
             FROM notifikasi n
@@ -815,11 +720,9 @@ def ringkasan(periode: Optional[str] = None, user: CurrentUser = Depends(get_act
 
 
 def _agregat_wilayah_rows(conn, group_by_col, periode, where_extra="", where_params=()):
-    """Query bersama untuk /peta/provinsi & /peta/kabupaten -- beda cuma kolom
-    GROUP BY dan filter tambahan. Kategori agregat dihitung dari skor
-    RATA-RATA wilayah dengan ambang yang sama seperti skor individual
-    (BATAS_SEHAT/BATAS_WASPADA) -- ini kesederhanaan yang disengaja, bukan
-    berarti semua koperasi di wilayah itu senyatanya berkategori sama."""
+    """Query bersama untuk /peta/provinsi & /peta/kabupaten (beda cuma kolom
+    GROUP BY & filter). Kategori agregat dari skor rata-rata wilayah, dengan
+    ambang yang sama seperti skor individual."""
     sql = f"""
         SELECT w.{group_by_col} AS nama,
                AVG(w.latitude) AS lat, AVG(w.longitude) AS lon,
@@ -854,10 +757,8 @@ def _agregat_wilayah_rows(conn, group_by_col, periode, where_extra="", where_par
 @app.get("/peta/provinsi")
 def peta_provinsi(periode: Optional[str] = None, user: CurrentUser = Depends(get_active_user)):
     """Agregat kesehatan koperasi per provinsi -- level 1 drill-down peta.
-    Titik lat/lon adalah rata-rata koordinat wilayah di provinsi itu (perkiraan
-    visual, bukan centroid administratif resmi -- lihat generate_data.py).
-    pmo hanya melihat provinsi yang punya wilayah dalam scope-nya, dan
-    hitungannya cuma mencakup koperasi dalam scope itu."""
+    Lat/lon adalah rata-rata koordinat wilayah di provinsi itu (perkiraan
+    visual). pmo hanya melihat provinsi & koperasi dalam scope-nya."""
     conn = get_conn()
     try:
         p = periode or periode_terbaru(conn)

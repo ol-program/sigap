@@ -16,9 +16,8 @@ function NavItem({ to, children, end }) {
   );
 }
 
-// Butuh login, TAPI TIDAK menolak mustChangePassword -- dipakai khusus untuk
-// /ganti-password sendiri (kalau ikut menolak, user yang wajib ganti
-// password tidak akan pernah bisa mencapai halaman untuk menggantinya).
+// Butuh login, tapi tidak menolak mustChangePassword -- dipakai untuk
+// /ganti-password sendiri.
 function RequireLoggedIn({ children }) {
   const { session } = useAuth();
   const location = useLocation();

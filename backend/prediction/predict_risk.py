@@ -1,23 +1,19 @@
 """
 SIGAP Kopdes - Model Prediksi Risiko (Step 4)
-================================================
-Melatih model klasifikasi ringan (regresi logistik) untuk memprediksi
-probabilitas sebuah koperasi berstatus KRITIS 3 bulan ke depan, berdasarkan
-skor & TREN dari engine step 3 -- bukan snapshot skor saat ini saja.
 
-Data pelatihan: pasangan (periode_t, periode_t+3) yang KEDUANYA tersedia di
-histori (Mar->Jun, Apr->Jul, Mei->Agu) -> hingga 3 x 156 = 468 contoh.
-Karena datanya simulasi & jumlahnya terbatas, metrik evaluasi di sini
-INDIKATIF untuk keperluan prototipe -- bukan klaim validasi produksi siap
-pakai. Ini penting disebutkan apa adanya ke juri, bukan disamarkan.
+Melatih regresi logistik untuk memprediksi probabilitas sebuah koperasi
+berstatus Kritis 3 bulan ke depan, berdasarkan skor & tren dari step 3.
 
-Fitur: skor_komposit, skor_transaksi, skor_stok, skor_pelaporan (saat ini),
-       delta_1bln, delta_2bln (perubahan skor komposit 1 & 2 bulan terakhir)
-Target: kategori == "Kritis" pada t+3 (biner)
+Data pelatihan: pasangan (periode_t, periode_t+GAP_BULAN) yang keduanya
+tersedia di histori. Data simulasi dan jumlahnya terbatas, jadi metrik
+evaluasi di sini bersifat indikatif untuk prototipe.
 
-Setelah dilatih, model diterapkan ke SEMUA baris skor_kesehatan (bukan cuma
-periode terbaru) supaya dashboard selalu punya angka prediksi_risiko_3bln,
-apa pun periode yang sedang dilihat pengguna.
+Fitur: skor_komposit, skor_transaksi, skor_stok, skor_pelaporan, delta_1bln,
+       delta_2bln
+Target: kategori == "Kritis" pada t+GAP_BULAN (biner)
+
+Model diterapkan ke seluruh baris skor_kesehatan (bukan cuma periode
+terbaru) supaya dashboard selalu punya prediksi_risiko_3bln.
 
 Usage:
     python predict_risk.py

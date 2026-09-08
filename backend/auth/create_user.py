@@ -1,10 +1,9 @@
 """
 SIGAP Kopdes - Buat/Update Akun Login
-========================================
-Tidak ada halaman registrasi di dashboard (ini alat internal untuk PMO,
-bukan aplikasi publik) -- akun dibuat lewat CLI ini oleh admin sistem.
-Password diminta lewat prompt tersembunyi (getpass), tidak pernah lewat
-argumen command-line (yang bisa bocor ke shell history / `ps aux`).
+
+Tidak ada halaman registrasi di dashboard -- akun dibuat lewat CLI ini oleh
+admin sistem. Password diminta lewat prompt tersembunyi (getpass), tidak
+lewat argumen command-line.
 
 Usage:
     # Admin (akses semua wilayah):
@@ -30,9 +29,7 @@ from auth import init_auth_db, get_auth_conn, hash_password, resolve_kabupaten a
 
 
 def resolve_kabupaten(nama_kabupaten):
-    # Tipis di atas auth.resolve_kabupaten() (satu sumber kebenaran, dipakai
-    # juga oleh endpoint admin di api/main.py) -- di sini cuma diterjemahkan
-    # dari ValueError ke print+exit yang lebih pas untuk CLI.
+    # Bungkus tipis auth.resolve_kabupaten(): ValueError -> print+exit untuk CLI.
     try:
         return _resolve_kabupaten(nama_kabupaten)
     except ValueError as e:
@@ -53,14 +50,10 @@ def main():
         sys.exit(1)
 
     if args.role == "superadmin":
-        # Sistem ini cuma boleh punya SATU superadmin, selamanya -- endpoint
-        # admin (/admin/users lewat portal frontend-admin/) sengaja MENOLAK
-        # membuat/mengubah akun jadi superadmin sama sekali (lihat
-        # _validate_role_scope di api/main.py), justru supaya jalur SATU-
-        # SATUNYA untuk (mengganti) superadmin adalah di sini -- CLI yang
-        # butuh akses shell/server, bukan tombol di browser. --username yang
-        # SAMA dengan superadmin yang sudah ada tetap boleh (itu cuma reset
-        # password/upsert akun itu sendiri, bukan menambah superadmin baru).
+        # Sistem ini cuma boleh punya satu superadmin -- endpoint admin
+        # (api/main.py) menolak membuat/ubah akun jadi superadmin, jadi
+        # satu-satunya jalur adalah CLI ini. --username yang sama dengan
+        # superadmin yang sudah ada tetap boleh (upsert akun itu sendiri).
         init_auth_db()
         conn = get_auth_conn()
         existing = conn.execute(
@@ -89,10 +82,8 @@ def main():
 
     init_auth_db()
     conn = get_auth_conn()
-    # must_change_password selalu 1 di sini (baik akun baru maupun password
-    # yang di-reset lewat --username yang sama) -- password ini diketik
-    # admin lewat prompt, jadi pemiliknya WAJIB menggantinya sebelum bisa
-    # login sungguhan.
+    # must_change_password selalu 1 -- password diketik admin, pemiliknya
+    # wajib menggantinya sebelum login sungguhan.
     conn.execute("""
         INSERT INTO users (username, password_hash, role, kode_wilayah_scope, must_change_password)
         VALUES (?, ?, ?, ?, 1)

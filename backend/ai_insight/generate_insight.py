@@ -1,68 +1,42 @@
 """
 SIGAP Kopdes - AI Insight & Rekomendasi (Step 5)
-===================================================
-Memanggil LLM untuk menghasilkan, per koperasi: narasi kondisi, rekomendasi
-tindakan (diagnostik, dari skor & tren step 3-4), serta TIGA jenis saran
-pengembangan usaha yang ditarik dari profil wilayah/IDM ("PROFIL_WILAYAH"):
-  - produk_prioritas   : 2-3 ide produk/jasa yang relevan dengan mata
-                          pencaharian dominan wilayah & keberagaman ekonominya
-  - rekomendasi_promosi: satu ide kampanye/promosi konkret, termasuk momentum
-                          waktunya
-  - rekomendasi_program: 2-3 ide program non-produk (pelatihan, kemitraan,
-                          digitalisasi, dst.) yang ditarik dari dimensi
-                          sosial/ekonomi/lingkungan & akses pasar wilayah --
-                          bukan cuma dari skor operasional koperasi itu sendiri
 
-PRINSIP PENTING (sudah ditulis di proposal, ditegakkan di kode ini): prompt
-HANYA berisi angka yang SUDAH DIHITUNG oleh engine (step 3), model prediksi
-(step 4), dan profil wilayah dari step 2 (simulasi struktur IDM -- lihat
-STATUS_IDM_WEIGHT di generate_data.py) -- LLM tidak diminta menghitung ulang
-skor atau mengarang data wilayah baru, hanya menarasikan & menyarankan
-berdasarkan angka yang diberikan. Ini mencegah LLM "mengarang" angka yang
-tampil ke pengguna. "Data eksternal" yang dipakai di sini SENGAJA berhenti di
-profil_wilayah (IDM simulasi) yang sudah ada sejak step 2 -- bukan integrasi
-API pemerintah sungguhan, karena seluruh dataset project ini memang simulasi
-(lihat README & docstring generate_data.py).
+Memanggil LLM untuk menghasilkan, per koperasi: narasi kondisi, satu
+rekomendasi tindakan (dari skor & tren step 3-4), dan tiga jenis saran
+pengembangan usaha berbasis profil wilayah/IDM:
+  - produk_prioritas   : 2-3 ide produk/jasa sesuai mata pencaharian &
+                          keragaman ekonomi wilayah
+  - rekomendasi_promosi: satu ide kampanye/promosi beserta momentum waktunya
+  - rekomendasi_program: 2-3 ide program non-produk dari dimensi sosial/
+                          ekonomi/lingkungan & akses pasar wilayah
 
-Tiga provider LLM didukung, dipilih lewat env var AI_PROVIDER (default
-"anthropic"):
+Prompt hanya berisi angka yang sudah dihitung step 2-4 (skor, prediksi,
+profil wilayah) -- LLM menarasikan & menyarankan, tidak menghitung ulang
+atau mengarang angka baru.
+
+Tiga provider LLM didukung lewat env var AI_PROVIDER (default "anthropic"):
 
   AI_PROVIDER=anthropic (default) -- butuh ANTHROPIC_API_KEY:
       export ANTHROPIC_API_KEY=sk-ant-...
       pip install anthropic
 
-  AI_PROVIDER=gemini -- alternatif GRATIS (Google AI Studio, tanpa kartu
-  kredit untuk tier gratis), butuh GEMINI_API_KEY:
+  AI_PROVIDER=gemini -- Google AI Studio, butuh GEMINI_API_KEY:
       export AI_PROVIDER=gemini
       export GEMINI_API_KEY=...          # dari https://aistudio.google.com/apikey
       pip install google-genai
 
-  AI_PROVIDER=ollama -- Ollama Cloud API (https://ollama.com), butuh
-  OLLAMA_API_KEY. Dipanggil lewat HTTPS ke ollama.com (BUKAN server Ollama
-  lokal) memakai model *-cloud (default gemma4:cloud), jadi tidak perlu
-  install/`ollama serve` apa pun di server:
+  AI_PROVIDER=ollama -- Ollama Cloud API (https://ollama.com, bukan server
+  Ollama lokal), butuh OLLAMA_API_KEY:
       export AI_PROVIDER=ollama
       export OLLAMA_API_KEY=...          # dari https://ollama.com/settings/keys
       pip install ollama
 
-PROMPT_TEMPLATE sama persis untuk ketiga provider -- yang beda cuma cara
-memanggil API-nya (lihat panggil_claude/panggil_gemini/panggil_ollama). Ini
-bukan integrasi terpisah per provider yang harus dirawat berkali-kali;
-cukup satu prompt, satu skema JSON, fungsi pemanggil tipis per provider.
+PROMPT_TEMPLATE sama untuk ketiga provider -- yang beda cuma pemanggilan API
+(panggil_claude/panggil_gemini/panggil_ollama).
 
-MODE BATCH (script ini, lewat CLI) BUKAN satu-satunya cara insight dibuat.
-`build_client()` dan `generate_one()` di bawah SENGAJA dipisah dari main()
-supaya bisa diimpor & dipanggil ulang oleh backend API (step 6, endpoint
-`GET /insight/{koperasi_id}`) untuk generate ON-DEMAND -- begitu pengguna
-membuka halaman detail koperasi yang belum punya insight tersimpan, API
-generate saat itu juga (realtime, cuma untuk koperasi yang benar-benar
-dilihat), bukan mem-batch semua koperasi di muka lalu buang kuota untuk
-yang tidak pernah dilihat siapa pun.
-
-Kalau belum punya API key sama sekali, pakai --dry-run untuk melihat persis
-prompt yang akan dikirim (dan menguji seluruh alur pengambilan data) tanpa
-memanggil API sama sekali -- berguna untuk verifikasi sebelum mengeluarkan
-biaya/kuota API.
+Mode batch (CLI) bukan satu-satunya cara insight dibuat: build_client() dan
+generate_one() dipakai ulang oleh backend API (GET /insight/{koperasi_id})
+untuk generate on-demand saat halaman detail koperasi dibuka.
 
 Usage:
     python generate_insight.py --dry-run                    # cek prompt, tanpa panggil API
@@ -87,13 +61,8 @@ DATA_DIR = os.path.join(HERE, "..", "data", "output")
 DB_PATH = os.path.join(DATA_DIR, "sigap_kopdes.db")
 
 def _current_provider():
-    """Dibaca FRESH dari os.environ tiap dipanggil -- SENGAJA bukan konstanta
-    modul yang di-cache sekali saat import (dulu begitu, dan itu artinya
-    proses backend yang sudah lama jalan tidak akan pernah melihat
-    AI_PROVIDER baru walau env var-nya diganti). Baca fresh di sini
-    memungkinkan superadmin ganti provider on-demand lewat portal
-    Manajemen Akun (endpoint PUT /admin/ai-provider di api/main.py) dan
-    berlaku SEKETIKA di proses backend yang sedang jalan, tanpa restart."""
+    """Dibaca fresh dari os.environ tiap dipanggil, supaya PUT /admin/ai-provider
+    berlaku seketika di proses yang sedang jalan tanpa restart."""
     return os.environ.get("AI_PROVIDER", "anthropic").lower()
 
 
@@ -110,20 +79,9 @@ _MODEL_ENV_BY_PROVIDER = {
 
 
 def _model_candidates():
-    """Daftar model yang dicoba BERURUTAN untuk provider aktif -- fallback
-    chain, bukan cuma satu id. Kalau model pertama gagal (kuota provider
-    habis, model belum/tidak tersedia, balasannya bukan JSON valid, dst),
-    otomatis coba model berikutnya di daftar sebelum benar-benar menyerah
-    -- lihat panggil_claude()/panggil_gemini()/panggil_ollama(). Disimpan
-    sebagai satu string dipisah koma di env var GEMINI_MODEL/CLAUDE_MODEL/
-    OLLAMA_MODEL (lihat admin_set_ai_model di api/main.py -- portal
-    Manajemen Akun bisa isi lebih dari satu model dipisah koma), dibaca
-    FRESH tiap dipanggil (bukan konstanta modul) supaya berlaku seketika
-    tanpa restart. Id model API TIDAK divalidasi di sini (katalog model
-    provider berubah dari waktu ke waktu) -- kalau salah/tidak ada, provider
-    sendiri yang menolak lewat error API, dan fallback ke kandidat
-    berikutnya baru jalan kalau SEMUA kandidat gagal barulah errornya
-    diteruskan (diringkas ringkas_error_llm() di api/main.py)."""
+    """Daftar model untuk provider aktif, dicoba berurutan sebagai fallback
+    chain (env var GEMINI_MODEL/CLAUDE_MODEL/OLLAMA_MODEL, dipisah koma).
+    Id model tidak divalidasi di sini -- provider sendiri yang menolak."""
     env_name, default = _MODEL_ENV_BY_PROVIDER.get(_current_provider(), _MODEL_ENV_BY_PROVIDER["anthropic"])
     raw = os.environ.get(env_name, default)
     kandidat = [m.strip() for m in raw.split(",") if m.strip()]
@@ -201,8 +159,8 @@ def build_prompt(row):
 
 
 def _parse_json_reply(teks):
-    """Kedua provider kadang membungkus balasan dengan ```json fence walau
-    sudah diminta tidak -- dibersihkan sebelum di-parse, sama untuk keduanya."""
+    """Provider kadang membungkus balasan dengan fence ```json walau sudah
+    diminta tidak -- dibersihkan sebelum di-parse."""
     teks = teks.strip().replace("```json", "").replace("```", "").strip()
     return json.loads(teks)
 
@@ -222,9 +180,6 @@ def panggil_claude(prompt, client):
             errors.append(f"{model}: {e}")
             if i < len(kandidat) - 1:
                 continue
-            # Kandidat terakhir juga gagal -- lempar error gabungan (semua
-            # percobaan), bukan cuma error kandidat terakhir, supaya jelas
-            # SEMUA model di fallback chain sudah dicoba & gagal.
             raise RuntimeError("Semua model gagal dicoba -- " + " | ".join(errors)) from e
 
 
@@ -269,11 +224,8 @@ LIST_FIELDS = ["produk_prioritas", "rekomendasi_program"]
 
 
 def encode_list_fields(out):
-    """SQLite (lewat pandas to_sql) tidak punya tipe list -- produk_prioritas
-    & rekomendasi_program disimpan sebagai JSON array di kolom TEXT, diurai
-    balik jadi array oleh backend API (step 6) saat dibaca. Kalau LLM sesekali
-    membalas string tunggal alih-alih array, dibungkus jadi array 1 elemen
-    supaya bentuknya tetap konsisten untuk konsumen di lapisan atas."""
+    """SQLite tidak punya tipe list -- produk_prioritas & rekomendasi_program
+    disimpan sebagai JSON array di kolom TEXT (diurai balik di api/main.py)."""
     for field in LIST_FIELDS:
         val = out.get(field, [])
         if isinstance(val, str):
@@ -289,14 +241,8 @@ def _table_exists(conn, name):
 
 
 def simpan(hasil_list):
-    """UPSERT per (koperasi_id, periode) -- BUKAN timpa total tabel. Bug nyata
-    yang ditemukan &  diperbaiki: versi awal pakai to_sql(if_exists="replace")
-    polos, yang diam-diam MENGHAPUS SEMUA insight koperasi lain tiap kali
-    script ini dijalankan untuk satu koperasi saja (--koperasi X) -- ketahuan
-    saat menguji provider Gemini untuk satu koperasi dan tabel ai_insight
-    yang tadinya berisi banyak baris jadi cuma tersisa satu. `--koperasi`
-    memang dirancang untuk regenerasi satu-per-satu (mis. skor koperasi itu
-    berubah), jadi baris koperasi LAIN yang sudah ada harus tetap dipertahankan."""
+    """UPSERT per (koperasi_id, periode) -- baris koperasi lain yang sudah
+    tersimpan tetap dipertahankan, tidak ditimpa total."""
     if not hasil_list:
         print("Tidak ada hasil untuk disimpan.")
         return
@@ -316,11 +262,9 @@ def simpan(hasil_list):
 
 
 def build_client():
-    """Bikin client provider yang sedang aktif (AI_PROVIDER). Melempar
-    RuntimeError (pesan siap-tampil, BUKAN sys.exit) kalau API key-nya belum
-    di-set -- dipanggil dari CLI (main(), yang menangkap & sys.exit sendiri)
-    MAUPUN dari backend API (step 6, endpoint /insight/{id} generate
-    on-demand) yang perlu menangkapnya jadi respons HTTP, bukan proses mati."""
+    """Client untuk provider aktif (AI_PROVIDER). Melempar RuntimeError
+    (bukan sys.exit) kalau API key belum di-set, supaya pemanggil (CLI atau
+    endpoint /insight/{id}) bisa menanganinya masing-masing."""
     if _current_provider() == "gemini":
         if not os.environ.get("GEMINI_API_KEY"):
             raise RuntimeError(
@@ -336,10 +280,7 @@ def build_client():
                 "https://ollama.com/settings/keys lalu export OLLAMA_API_KEY=..."
             )
         import ollama
-        # Selalu ke Ollama Cloud (ollama.com), BUKAN server Ollama lokal --
-        # OLLAMA_HOST bisa dioverride kalau memang ingin arahkan ke server
-        # sendiri, tapi defaultnya sengaja cloud supaya tidak perlu install/
-        # jalankan `ollama serve` apa pun di server backend ini.
+        # Default ke Ollama Cloud, bukan server lokal; OLLAMA_HOST bisa dioverride.
         host = os.environ.get("OLLAMA_HOST", "https://ollama.com")
         return ollama.Client(host=host, headers={"Authorization": f"Bearer {os.environ['OLLAMA_API_KEY']}"})
     else:
@@ -353,10 +294,8 @@ def build_client():
 
 
 def generate_one(row, client):
-    """Generate & encode SATU insight (belum disimpan ke DB) dari satu baris
-    load_context(). Dipakai baik oleh loop batch di main() maupun endpoint
-    on-demand /insight/{id} di backend API (step 6) -- logikanya satu tempat,
-    tidak disalin dua kali supaya tidak diam-diam menyimpang."""
+    """Generate & encode satu insight (belum disimpan) dari satu baris
+    load_context(). Dipakai baik oleh main() maupun endpoint /insight/{id}."""
     prompt = build_prompt(row)
     out = panggil_llm(prompt, client)
     out = encode_list_fields(out)

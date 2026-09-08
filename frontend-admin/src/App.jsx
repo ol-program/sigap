@@ -4,10 +4,8 @@ import LoginPage from "./pages/LoginPage.jsx";
 import ChangePasswordPage from "./pages/ChangePasswordPage.jsx";
 import UsersPage from "./pages/UsersPage.jsx";
 
-// Key BEDA dari frontend/ ("sigap_auth") SENGAJA -- walau dua app ini juga
-// sudah terisolasi lewat origin/localStorage berbeda (subdomain berbeda),
-// nama key yang beda bikin jelas kalau dua devtools/localStorage dibuka
-// berdampingan yang mana punya siapa.
+// Key beda dari frontend/ ("sigap_auth") supaya jelas milik siapa kalau
+// dua devtools/localStorage dibuka berdampingan.
 const STORAGE_KEY = "sigap_superadmin_auth";
 
 function loadStored() {

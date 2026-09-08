@@ -1,10 +1,8 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-// Sama seperti frontend/src/api.js (token & handler di-set dari luar, lihat
-// App.jsx) TAPI dipangkas -- app ini cuma butuh login, ganti password, &
-// endpoint /admin/users/*. TIDAK ada endpoint data koperasi di sini SAMA
-// SEKALI -- superadmin memang tidak boleh melihatnya (lihat
-// get_superadmin_user & scope_clause di backend/auth/auth.py).
+// Dipangkas dari frontend/src/api.js -- app ini cuma butuh login, ganti
+// password, & endpoint /admin/*. Tidak ada endpoint data koperasi sama
+// sekali, karena superadmin tidak boleh melihatnya.
 let authToken = null;
 let onUnauthorized = () => {};
 

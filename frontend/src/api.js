@@ -14,12 +14,8 @@ export function setUnauthorizedHandler(fn) {
   onUnauthorized = fn;
 }
 
-// Dipanggil kalau server balas 403 dengan detail.code MUST_CHANGE_PASSWORD --
-// bisa terjadi meski session lokal belum tahu (mis. admin reset password
-// akun ini dari tab/device lain di tengah sesi yang sedang berjalan; dicek
-// FRESH dari auth.db tiap request di backend, lihat get_active_user di
-// backend/auth/auth.py). Login sendiri sudah mengembalikan flag ini
-// langsung tanpa perlu menunggu 403 -- lihat AuthContext.login().
+// Dipanggil kalau server balas 403 MUST_CHANGE_PASSWORD (bisa terjadi
+// meski session lokal belum tahu, mis. admin reset password dari tab lain).
 export function setMustChangePasswordHandler(fn) {
   onMustChangePassword = fn;
 }
@@ -84,7 +80,5 @@ export const api = {
   petaProvinsi: (params) => get("/peta/provinsi", params),
   petaKabupaten: (params) => get("/peta/kabupaten", params),
   metodologi: () => get("/metodologi"),
-  // Manajemen akun (superadmin) SENGAJA tidak ada di sini -- dashboard ini
-  // publik untuk role admin/pmo. Endpoint /admin/users/* dipakai dari app
-  // terpisah (frontend-admin/), lihat README bagian "Portal Superadmin".
+  // Endpoint /admin/users/* (manajemen akun) dipakai dari frontend-admin/, bukan di sini.
 };
