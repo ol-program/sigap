@@ -57,7 +57,7 @@ export default function NotifikasiPage() {
                   <td>{n.tanggal}</td>
                   <td><Link to={`/koperasi/${n.koperasi_id}`}>{n.koperasi_id}</Link></td>
                   <td>{n.jenis_alert}</td>
-                  <td>{n.status_tindak_lanjut}</td>
+                  <td><span className="status-badge">{n.status_tindak_lanjut}</span></td>
                 </tr>
               ))}
             </tbody>

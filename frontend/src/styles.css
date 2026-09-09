@@ -85,9 +85,20 @@ a:hover {
   padding: 20px 16px;
 }
 
+.sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.sidebar-brand img {
+  flex-shrink: 0;
+}
+
 .sidebar h1 {
   font-size: 16px;
-  margin: 0 0 4px;
+  margin: 0;
 }
 
 .sidebar .subtitle {
@@ -99,14 +110,18 @@ a:hover {
 .sidebar nav {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
 }
 
 .sidebar nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   color: var(--text-secondary);
   padding: 8px 10px;
   border-radius: 6px;
   font-size: 14px;
+  transition: background-color 0.12s ease, color 0.12s ease;
 }
 
 .sidebar nav a:hover {
@@ -117,6 +132,90 @@ a:hover {
 .sidebar nav a.active {
   background: var(--series-1);
   color: #ffffff;
+  font-weight: 500;
+}
+
+.nav-icon {
+  flex-shrink: 0;
+  opacity: 0.85;
+}
+.sidebar nav a.active .nav-icon {
+  opacity: 1;
+}
+
+.sidebar-user {
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.user-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.user-avatar {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--series-1);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.user-meta {
+  min-width: 0;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.sidebar-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  text-decoration: none;
+}
+.sidebar-action + .sidebar-action {
+  margin-top: 6px;
+}
+
+.btn-ghost-danger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.btn-ghost-danger:hover {
+  color: var(--status-critical);
+  background: var(--page-plane);
 }
 
 .main-content {

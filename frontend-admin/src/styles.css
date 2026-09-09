@@ -154,6 +154,23 @@ tbody tr:hover {
 .btn-danger:hover { background: var(--status-critical); color: #fff; }
 .btn-sm { padding: 4px 9px; font-size: 12px; }
 
+.btn-ghost-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.btn-ghost-danger:hover {
+  color: var(--status-critical);
+  background: var(--page-plane);
+}
+
 .row-actions {
   display: flex;
   gap: 6px;

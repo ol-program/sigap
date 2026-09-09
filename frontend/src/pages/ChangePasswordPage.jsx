@@ -4,7 +4,7 @@ import { api } from "../api.js";
 import { useAuth } from "../AuthContext.jsx";
 
 export default function ChangePasswordPage() {
-  const { session, logout, markPasswordChanged } = useAuth();
+  const { session, markPasswordChanged } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const forced = session?.mustChangePassword;
@@ -35,18 +35,15 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div style={{
-      minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center",
-      background: "var(--page-plane)",
-    }}>
-      <form onSubmit={handleSubmit} className="card" style={{ width: 340 }}>
-        <h2 style={{ marginTop: 0 }}>Ganti Password</h2>
-        <p className="page-desc">
-          {forced
-            ? "Akun Anda dibuat oleh admin dengan password sementara -- ganti dulu sebelum melanjutkan ke dashboard."
-            : "Ganti password akun Anda."}
-        </p>
+    <div>
+      <h2>Ganti Password</h2>
+      <p className="page-desc">
+        {forced
+          ? "Akun Anda dibuat oleh admin dengan password sementara -- ganti dulu sebelum melanjutkan ke dashboard."
+          : "Ganti password akun Anda."}
+      </p>
 
+      <form onSubmit={handleSubmit} className="card" style={{ maxWidth: 380 }}>
         <div className="form-field">
           <label>Password saat ini</label>
           <input
@@ -81,31 +78,16 @@ export default function ChangePasswordPage() {
 
         {error && <div className="error-state" style={{ padding: "8px 0", textAlign: "left" }}>{error}</div>}
 
-        <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%" }}>
-          {loading ? "Memproses..." : "Ganti Password"}
-        </button>
-
-        {!forced && (
-          <button
-            type="button"
-            className="btn"
-            style={{ width: "100%", marginTop: 8 }}
-            onClick={() => navigate(-1)}
-          >
-            Batal
+        <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+          <button type="submit" className="btn btn-primary" disabled={loading} style={{ flex: 1 }}>
+            {loading ? "Memproses..." : "Ganti Password"}
           </button>
-        )}
-
-        <button
-          type="button"
-          onClick={logout}
-          style={{
-            marginTop: 16, background: "none", border: "none", color: "var(--text-muted)",
-            fontSize: 12, cursor: "pointer", textDecoration: "underline", padding: 0,
-          }}
-        >
-          Keluar
-        </button>
+          {!forced && (
+            <button type="button" className="btn" onClick={() => navigate(-1)}>
+              Batal
+            </button>
+          )}
+        </div>
       </form>
     </div>
   );
