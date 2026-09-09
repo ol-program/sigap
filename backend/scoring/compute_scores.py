@@ -1,9 +1,9 @@
 """
-SIGAP Kopdes - Engine Skor Kesehatan (Step 3)
+SIGAP Kopdes - Engine Skor Kelayakan (Step 3)
 
 Membaca data mentah (transaksi, stok, laporan) hasil step 2, menghitung skor
-kesehatan komposit per koperasi per periode (bulan), menyimpannya ke tabel
-skor_kesehatan, dan menerbitkan notifikasi otomatis.
+kelayakan komposit per koperasi per periode (bulan), menyimpannya ke tabel
+skor_kelayakan, dan menerbitkan notifikasi otomatis.
 
 Metodologi (bobot & ambang di konstanta bawah):
   skor_transaksi  = rata-rata peringkat persentil jumlah & total nilai
@@ -21,8 +21,8 @@ absolut. prediksi_risiko_3bln dikosongkan (None) di sini -- dihitung step 4.
 Usage:
     python compute_scores.py
 Output:
-    ../data/output/sigap_kopdes.db     -> tabel skor_kesehatan & notifikasi
-    ../data/output/skor_kesehatan.csv, notifikasi.csv
+    ../data/output/sigap_kopdes.db     -> tabel skor_kelayakan & notifikasi
+    ../data/output/skor_kelayakan.csv, notifikasi.csv
 """
 import os
 import sqlite3
@@ -139,10 +139,10 @@ def terbitkan_notifikasi(df_skor):
 
 def simpan(df_skor, df_notif):
     conn = sqlite3.connect(DB_PATH)
-    df_skor.to_sql("skor_kesehatan", conn, if_exists="replace", index=False)
+    df_skor.to_sql("skor_kelayakan", conn, if_exists="replace", index=False)
     df_notif.to_sql("notifikasi", conn, if_exists="replace", index=False)
     conn.close()
-    df_skor.to_csv(os.path.join(DATA_DIR, "skor_kesehatan.csv"), index=False)
+    df_skor.to_csv(os.path.join(DATA_DIR, "skor_kelayakan.csv"), index=False)
     df_notif.to_csv(os.path.join(DATA_DIR, "notifikasi.csv"), index=False)
 
 
@@ -167,7 +167,7 @@ def main():
     kolom = ["koperasi_id", "skor_transaksi", "skor_stok", "skor_pelaporan", "skor_komposit", "kategori"]
     print(terbaru.sort_values("skor_komposit")[kolom].head(5).to_string(index=False))
     print()
-    print(f"Tersimpan ke {DB_PATH} (tabel skor_kesehatan, notifikasi) dan CSV di {DATA_DIR}/")
+    print(f"Tersimpan ke {DB_PATH} (tabel skor_kelayakan, notifikasi) dan CSV di {DATA_DIR}/")
 
 
 if __name__ == "__main__":

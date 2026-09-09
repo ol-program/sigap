@@ -17,7 +17,7 @@ export default function ScoreHighlight({ skor, kategori, previousSkor, prediksiR
   return (
     <div className="card score-highlight-card">
       <div className="score-highlight-inner">
-        <div className="score-ring-wrap" role="img" aria-label={`Skor kesehatan komposit ${skor ?? "-"} dari 100, kategori ${kategori ?? "-"}`}>
+        <div className="score-ring-wrap" role="img" aria-label={`Skor kelayakan komposit ${skor ?? "-"} dari 100, kategori ${kategori ?? "-"}`}>
           <svg viewBox="0 0 120 120" className="score-ring">
             <circle cx="60" cy="60" r={RADIUS} className="score-ring-track" strokeWidth="10" fill="none" />
             <circle
@@ -42,7 +42,7 @@ export default function ScoreHighlight({ skor, kategori, previousSkor, prediksiR
 
         <div className="score-highlight-meta">
           <div className="score-highlight-label">
-            Skor Kesehatan Komposit
+            Skor Kelayakan Komposit
             <InfoTooltip text="Rata-rata tertimbang skor transaksi, stok, dan pelaporan bulan ini. Skala 0-100, relatif terhadap koperasi lain yang dipantau." />
           </div>
           <div className="score-highlight-row">

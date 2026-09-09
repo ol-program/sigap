@@ -20,8 +20,8 @@ Poin yang perlu disampaikan:
 
 ## 2. Solusi — SIGAP Kopdes (1 slide)
 
-**SIGAP Kopdes** = **Si**stem **G**agasan/Deteksi Dini Kesehatan Usaha Koperasi Desa (rangkai ulang kepanjangan sesuai proposal asli kalian) — dashboard yang:
-1. Menghitung **skor kesehatan** tiap koperasi tiap bulan dari data operasional mentah (transaksi, stok, laporan).
+**SIGAP Kopdes** = **Si**stem **G**agasan/Deteksi Dini Kelayakan Usaha Koperasi Desa (rangkai ulang kepanjangan sesuai proposal asli kalian) — dashboard yang:
+1. Menghitung **skor kelayakan** tiap koperasi tiap bulan dari data operasional mentah (transaksi, stok, laporan).
 2. **Memprediksi risiko** koperasi jatuh ke kategori Kritis 3 bulan ke depan — bukan cuma snapshot kondisi sekarang.
 3. Memberi **rekomendasi tindakan konkret** lewat AI (narasi kondisi, aksi diagnostik, ide produk/promosi/program) — bukan cuma angka mentah yang harus ditafsirkan manual oleh PMO.
 
@@ -36,7 +36,7 @@ Prinsip yang harus ditekankan di awal bagian ini: **tiga lapisan berjalan beruru
 ```
 data mentah (transaksi, stok, laporan)
         ↓
-[Lapisan 1] Skor Kesehatan  — statistik deskriptif, per periode
+[Lapisan 1] Skor Kelayakan  — statistik deskriptif, per periode
         ↓
 [Lapisan 2] Prediksi Risiko — regresi logistik, dari histori skor
         ↓
@@ -45,7 +45,7 @@ data mentah (transaksi, stok, laporan)
    Dashboard (PMO)
 ```
 
-### 3.1 Lapisan 1 — Skor Kesehatan (`compute_scores.py`)
+### 3.1 Lapisan 1 — Skor Kelayakan (`compute_scores.py`)
 
 Dihitung **per koperasi, per bulan**, dari 3 komponen:
 
@@ -73,8 +73,8 @@ Dihitung **per koperasi, per bulan**, dari 3 komponen:
 
 **Kejujuran metrik (poin ini WAJIB disampaikan, jangan dilewati):**
 - Karena data training berasal dari data simulasi dengan jumlah terbatas, ROC-AUC di sini bersifat **indikatif untuk prototipe**, bukan klaim validasi siap produksi.
-- Percobaan pertama sempat menghasilkan **ROC-AUC 0.99** — dicurigai overfitting, karena `generate_data.py` awalnya memberi tiap koperasi satu profil kesehatan tetap sepanjang 6 bulan (memprediksi masa depan jadi nyaris trivial karena masa depan = masa sekarang).
-- Diperbaiki dengan menambah **~15% koperasi mengalami "goncangan"** (perubahan tier kesehatan di tengah jalan) di generator data, supaya polanya lebih realistis. Setelah perbaikan, ROC-AUC turun ke **~0.87** — lebih rendah, tapi jauh lebih bisa dipertanggungjawabkan.
+- Percobaan pertama sempat menghasilkan **ROC-AUC 0.99** — dicurigai overfitting, karena `generate_data.py` awalnya memberi tiap koperasi satu profil kelayakan tetap sepanjang 6 bulan (memprediksi masa depan jadi nyaris trivial karena masa depan = masa sekarang).
+- Diperbaiki dengan menambah **~15% koperasi mengalami "goncangan"** (perubahan tier kelayakan di tengah jalan) di generator data, supaya polanya lebih realistis. Setelah perbaikan, ROC-AUC turun ke **~0.87** — lebih rendah, tapi jauh lebih bisa dipertanggungjawabkan.
 
 **Kalimat kunci untuk slide ini:** *"Kami curiga saat angka terlalu bagus, bukan cuma senang — ROC-AUC 0.99 itu tanda bahaya kebocoran data, bukan prestasi. Setelah investigasi dan perbaikan, angkanya turun tapi jadi jujur."*
 
@@ -125,7 +125,7 @@ Juri datathon biasanya sangat menghargai kejujuran soal keterbatasan dibanding k
 
 Urutan demo yang disarankan (ikuti alur natural pengguna PMO):
 1. **Login** → tunjukkan ada role berbeda (admin = semua wilayah, pmo = scope wilayah tertentu).
-2. **Halaman Ringkasan** → stat tile jumlah koperasi per kategori + notifikasi tertunda + **Peta Sebaran Koperasi** (klik provinsi → kabupaten → marker koperasi individual, warna sesuai kategori kesehatan).
+2. **Halaman Ringkasan** → stat tile jumlah koperasi per kategori + notifikasi tertunda + **Peta Sebaran Koperasi** (klik provinsi → kabupaten → marker koperasi individual, warna sesuai kategori kelayakan).
 3. **Daftar Koperasi** → filter kategori/wilayah, tunjukkan skala data (jumlah koperasi yang bisa dipantau sekaligus, mustahil manual).
 4. **Detail Koperasi** → profil, tren skor 4-seri (grafik), lalu **AI Insight** — tunggu proses generate on-demand (~2-15 detik), tunjukkan hasil: narasi kondisi, rekomendasi tindakan, produk prioritas, rekomendasi promosi & program.
 5. **Halaman Kriteria & Metodologi** → bukti bahwa ambang skor bukan angka sembarangan, bisa dijelaskan dan diaudit.
@@ -142,7 +142,7 @@ Ini pembeda penting dari proyek datathon "sekadar demo" — tunjukkan bahwa tim 
 - Autentikasi wajib (JWT, bcrypt password hash), 3 role dengan pemisahan wewenang jelas (admin lihat data, superadmin kelola akun — dipisah sengaja untuk prinsip least privilege).
 - Akses PMO dibatasi per wilayah **di level query SQL**, bukan disaring belakangan — data di luar scope tidak pernah keluar dari database.
 - Portal superadmin terpisah dari dashboard utama (bisa di-deploy ke subdomain berbeda, tidak publik/tidak ditautkan).
-- Ditambahkan **sebelum** rencana deployment publik, karena data kesehatan finansial koperasi bersifat sensitif — bukan tempelan di akhir.
+- Ditambahkan **sebelum** rencana deployment publik, karena data kelayakan finansial koperasi bersifat sensitif — bukan tempelan di akhir.
 
 **Kalimat kunci:** *"Kami menambahkan lapisan keamanan ini bukan karena template best-practice, tapi karena sadar begitu sistem ini online, data finansial ratusan koperasi di berbagai wilayah jadi bisa diakses siapa saja yang tahu URL-nya kalau tidak dilindungi."*
 
@@ -152,7 +152,7 @@ Ini pembeda penting dari proyek datathon "sekadar demo" — tunjukkan bahwa tim 
 
 Sasaran manfaat, kaitkan ke subtema "Koperasi dan Pemberdayaan Ekonomi Masyarakat":
 - **Bagi PMO/pembina koperasi:** dari reaktif (menunggu laporan masalah) ke proaktif (intervensi dini berbasis skor & prediksi 3 bulan ke depan).
-- **Bagi Pemerintah Pusat:** visibilitas nasional real-time atas kesehatan seluruh jaringan KDMP tanpa perlu laporan manual berjenjang.
+- **Bagi Pemerintah Pusat:** visibilitas nasional real-time atas kelayakan seluruh jaringan KDMP tanpa perlu laporan manual berjenjang.
 - **Bagi koperasi sendiri (efek tidak langsung):** rekomendasi produk/promosi/program yang kontekstual dengan kondisi sosial-ekonomi wilayahnya (bukan saran generik), berpotensi mempercepat pemberdayaan ekonomi lokal.
 - **Skalabilitas:** karena skor & prediksi dihitung otomatis dari data operasional rutin, sistem ini bisa scale ke ribuan koperasi tanpa menambah beban kerja manual PMO secara linear.
 

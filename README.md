@@ -1,6 +1,6 @@
 # SIGAP Kopdes
 
-Sistem Deteksi Dini Kesehatan Usaha Koperasi Desa/Kelurahan Merah Putih (KDMP) — dibuat untuk LAN Datathon 2026 (subtema Koperasi dan Pemberdayaan Ekonomi Masyarakat).
+Sistem Deteksi Dini Kelayakan Usaha Koperasi Desa/Kelurahan Merah Putih (KDMP) — dibuat untuk LAN Datathon 2026 (subtema Koperasi dan Pemberdayaan Ekonomi Masyarakat).
 
 Dokumen lengkap: lihat `Proposal_SIGAP_Kopdes_LAN_Datathon_2026.docx`.
 
@@ -8,7 +8,7 @@ Dokumen lengkap: lihat `Proposal_SIGAP_Kopdes_LAN_Datathon_2026.docx`.
 
 - [x] **1. Struktur proyek & rencana teknis**
 - [x] **2. Data layer** — generator data simulasi sesuai skema (`backend/data/generate_data.py`)
-- [x] **3. Engine skor kesehatan** — skor komposit dari data mentah (`backend/scoring/compute_scores.py`)
+- [x] **3. Engine skor kelayakan** — skor komposit dari data mentah (`backend/scoring/compute_scores.py`)
 - [x] **4. Model prediksi risiko** — proyeksi risiko kritis 3 bulan ke depan (`backend/prediction/predict_risk.py`)
 - [x] **5. AI Insight & Rekomendasi** — narasi kondisi + saran tindakan per koperasi (`backend/ai_insight/generate_insight.py`)
 - [x] **6. Backend API** — FastAPI yang menyajikan skor, prediksi, dan insight AI (`backend/api/main.py`)
@@ -54,7 +54,7 @@ sigap-kopdes/
 Dari fondasi ke lapisan paling atas — tiap file dibangun di atas file sebelumnya:
 
 1. `backend/data/generate_data.py` — struktur data & cara data disimulasikan
-2. `backend/scoring/compute_scores.py` — cara skor kesehatan dihitung dari data mentah
+2. `backend/scoring/compute_scores.py` — cara skor kelayakan dihitung dari data mentah
 3. `backend/prediction/predict_risk.py` — model prediksi risiko
 4. `backend/ai_insight/generate_insight.py` — lapisan AI, mengonsumsi hasil 1-3; lihat `PROMPT_TEMPLATE` untuk isi persis yang dikirim ke LLM
 5. `backend/api/main.py` — lapisan API, murni query/join dari `sigap_kopdes.db`
@@ -82,16 +82,16 @@ python prepare_idm_lookup.py "/path/ke/indeks-desa-membangun-2024....xlsx"
 
 Menghasilkan `idm_2024_lookup.csv` (sudah ada di repo, langkah ini opsional kecuali ganti/perbarui file sumber) yang dibaca `generate_data.py` tiap dijalankan. Untuk 13 dari 21 kabupaten/kota di `WILAYAH_SEED` berstatus "Kabupaten", nama desa + dimensi sosial/ekonomi/lingkungan + status/skor IDM di `profil_wilayah` diambil dari data asli IDM 2024 (2.822 desa tersaring). 8 kabupaten/kota berstatus "Kota" tetap simulasi penuh — IDM secara definisi hanya mencakup desa (kewenangan Kemendes PDTT), bukan kelurahan (kewenangan Kemendagri). `mata_pencaharian_dominan`, `ekonomi_beragam`, `akses_pusat_perdagangan` tetap simulasi untuk semua wilayah (tidak ada di sumber IDM). Data IDM 2024 adalah data per 2024, bukan real-time.
 
-Kalau database lama dibuat sebelum perubahan lat/lon & IDM asli ini: jalankan ulang `generate_data.py` lalu `compute_scores.py` dan `predict_risk.py` (step 3 & 4) — `generate_data.py` menghapus & menulis ulang seluruh `sigap_kopdes.db` tiap dijalankan, jadi tabel `skor_kesehatan`/`notifikasi`/`ai_insight` ikut hilang dan perlu dihitung ulang (tabel `users` di `auth.db` aman, disimpan terpisah).
+Kalau database lama dibuat sebelum perubahan lat/lon & IDM asli ini: jalankan ulang `generate_data.py` lalu `compute_scores.py` dan `predict_risk.py` (step 3 & 4) — `generate_data.py` menghapus & menulis ulang seluruh `sigap_kopdes.db` tiap dijalankan, jadi tabel `skor_kelayakan`/`notifikasi`/`ai_insight` ikut hilang dan perlu dihitung ulang (tabel `users` di `auth.db` aman, disimpan terpisah).
 
-## Menjalankan step 3 (engine skor kesehatan)
+## Menjalankan step 3 (engine skor kelayakan)
 
 ```bash
 cd backend
 python scoring/compute_scores.py   # butuh pandas: pip install pandas
 ```
 
-Membaca tabel mentah dari `sigap_kopdes.db`, menghitung skor 0-100 per koperasi per bulan (metodologi lengkap ada di docstring `compute_scores.py`), lalu menulis tabel `skor_kesehatan` dan `notifikasi`.
+Membaca tabel mentah dari `sigap_kopdes.db`, menghitung skor 0-100 per koperasi per bulan (metodologi lengkap ada di docstring `compute_scores.py`), lalu menulis tabel `skor_kelayakan` dan `notifikasi`.
 
 Parameter yang bisa disetel (di bagian atas file): bobot tiap komponen skor (`BOBOT`), ambang kategori (`BATAS_SEHAT`, `BATAS_WASPADA`), ambang notifikasi penurunan skor (`TURUN_SIGNIFIKAN`).
 
@@ -102,7 +102,7 @@ cd backend
 python prediction/predict_risk.py   # butuh scikit-learn, joblib
 ```
 
-Melatih regresi logistik dari histori skor (fitur: skor komposit + 3 sub-skor + tren 1 & 2 bulan terakhir) untuk memprediksi probabilitas sebuah koperasi jatuh ke kategori Kritis 3 bulan ke depan, lalu mengisi kolom `prediksi_risiko_3bln` di tabel `skor_kesehatan`.
+Melatih regresi logistik dari histori skor (fitur: skor komposit + 3 sub-skor + tren 1 & 2 bulan terakhir) untuk memprediksi probabilitas sebuah koperasi jatuh ke kategori Kritis 3 bulan ke depan, lalu mengisi kolom `prediksi_risiko_3bln` di tabel `skor_kelayakan`.
 
 Data simulasi dan jumlahnya terbatas (ROC-AUC ~0.87 pada data uji) — metrik ini indikatif untuk prototipe, bukan validasi produksi.
 
@@ -178,13 +178,13 @@ Endpoint utama:
 |---|---|
 | `GET /koperasi` | Daftar koperasi + skor, prediksi, lat/lon (filter: `kategori`, `kode_wilayah`, `kabupaten_kota`, `provinsi`, `periode`) |
 | `GET /koperasi/{koperasi_id}` | Detail 1 koperasi: profil, histori skor semua periode, AI insight terbaru |
-| `GET /skor` | Baris `skor_kesehatan` mentah (filter: `periode`, `koperasi_id`) |
+| `GET /skor` | Baris `skor_kelayakan` mentah (filter: `periode`, `koperasi_id`) |
 | `GET /notifikasi` | Notifikasi otomatis dari step 3 (filter: `status_tindak_lanjut`, `koperasi_id`) |
 | `GET /insight/{koperasi_id}` | AI insight -- dari cache kalau sudah ada, atau generate on-demand kalau belum. 503 kalau server belum ada API key provider, 502 kalau panggilan LLM gagal |
 | `GET /wilayah` | Daftar wilayah + profil IDM gabungan |
 | `GET /ringkasan` | Agregat untuk kartu dashboard (jumlah per kategori, rata-rata skor, notifikasi belum ditindaklanjuti) |
-| `GET /peta/provinsi` | Agregat kesehatan per provinsi (level 1 peta) -- jumlah koperasi, rata-rata skor, kategori agregat, koordinat |
-| `GET /peta/kabupaten?provinsi=...` | Agregat kesehatan per kabupaten/kota dalam satu provinsi (level 2 peta) |
+| `GET /peta/provinsi` | Agregat kelayakan per provinsi (level 1 peta) -- jumlah koperasi, rata-rata skor, kategori agregat, koordinat |
+| `GET /peta/kabupaten?provinsi=...` | Agregat kelayakan per kabupaten/kota dalam satu provinsi (level 2 peta) |
 | `GET /metodologi` | Ambang & bobot skor (`BATAS_SEHAT`, `BATAS_WASPADA`, `BOBOT`, `TURUN_SIGNIFIKAN`, `GAP_BULAN_PREDIKSI`) untuk halaman "Kriteria & Metodologi", diambil langsung dari `compute_scores.py`/`predict_risk.py` |
 
 Kategori agregat di `/peta/*` dihitung dari skor rata-rata wilayah dengan ambang yang sama seperti skor individual (`BATAS_SEHAT`/`BATAS_WASPADA`, di-import langsung dari `scoring/compute_scores.py`) — bukan berarti semua koperasi di wilayah itu senyatanya berkategori sama, cuma penyederhanaan untuk tampilan agregat.

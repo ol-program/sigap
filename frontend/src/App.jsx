@@ -44,7 +44,7 @@ function Shell() {
           <img src="/branding/sigap-mark.svg" alt="" width={28} height={28} style={{ flexShrink: 0 }} />
           <h1 style={{ margin: 0 }}>SIGAP Kopdes</h1>
         </div>
-        <p className="subtitle">Deteksi dini kesehatan usaha KDMP</p>
+        <p className="subtitle">Deteksi dini kelayakan usaha KDMP</p>
         <nav>
           <NavItem to="/" end>Ringkasan</NavItem>
           <NavItem to="/koperasi">Daftar Koperasi</NavItem>

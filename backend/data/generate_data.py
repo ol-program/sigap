@@ -11,7 +11,7 @@ idm_2024_lookup.csv, prepare_idm_lookup.py); kota (berbasis kelurahan, di
 luar cakupan IDM) dan field lain (mata pencaharian, akses pasar) tetap
 simulasi. Tiap koperasi punya profil tersembunyi (_tier, _trend, tidak
 ditulis ke tabel KOPERASI) yang membangkitkan pola transaksi/stok/laporan --
-skor kesehatan sesungguhnya dihitung dari data mentah ini di step 3.
+skor kelayakan sesungguhnya dihitung dari data mentah ini di step 3.
 
 Usage:
     python generate_data.py

@@ -50,7 +50,7 @@ export default function PetaWilayah() {
     <div className="card" style={{ marginBottom: 24, padding: 16 }}>
       <h4 style={{ marginTop: 0, marginBottom: 4 }}>Peta Sebaran Koperasi</h4>
       <p className="page-desc" style={{ marginBottom: 12 }}>
-        Agregat kondisi kesehatan koperasi per wilayah. Klik titik untuk lihat lebih detail.
+        Agregat kondisi kelayakan koperasi per wilayah. Klik titik untuk lihat lebih detail.
       </p>
 
       <div className="breadcrumb">

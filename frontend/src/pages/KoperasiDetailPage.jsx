@@ -74,7 +74,7 @@ export default function KoperasiDetailPage() {
         </div>
 
         <div className="card">
-          <h4 style={{ marginTop: 0 }}>Tren Skor Kesehatan</h4>
+          <h4 style={{ marginTop: 0 }}>Tren Skor Kelayakan</h4>
           <ScoreTrendChart data={histori_skor} />
         </div>
       </div>

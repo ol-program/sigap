@@ -12,13 +12,13 @@ Fitur: skor_komposit, skor_transaksi, skor_stok, skor_pelaporan, delta_1bln,
        delta_2bln
 Target: kategori == "Kritis" pada t+GAP_BULAN (biner)
 
-Model diterapkan ke seluruh baris skor_kesehatan (bukan cuma periode
+Model diterapkan ke seluruh baris skor_kelayakan (bukan cuma periode
 terbaru) supaya dashboard selalu punya prediksi_risiko_3bln.
 
 Usage:
     python predict_risk.py
 Output:
-    ../data/output/sigap_kopdes.db      -> skor_kesehatan.prediksi_risiko_3bln terisi
+    ../data/output/sigap_kopdes.db      -> skor_kelayakan.prediksi_risiko_3bln terisi
     ../data/output/model_risiko.joblib  -> model terlatih, dipakai lagi di step 6 (API)
 """
 import os
@@ -40,7 +40,7 @@ FITUR = ["skor_komposit", "skor_transaksi", "skor_stok", "skor_pelaporan", "delt
 
 def load_skor():
     conn = sqlite3.connect(DB_PATH)
-    df = pd.read_sql("SELECT * FROM skor_kesehatan", conn)
+    df = pd.read_sql("SELECT * FROM skor_kelayakan", conn)
     conn.close()
     for c in ["skor_transaksi", "skor_stok", "skor_pelaporan", "skor_komposit"]:
         df[c] = pd.to_numeric(df[c])
@@ -114,9 +114,9 @@ def terapkan_ke_semua(df, model):
 
 def simpan(df, model):
     conn = sqlite3.connect(DB_PATH)
-    df.to_sql("skor_kesehatan", conn, if_exists="replace", index=False)
+    df.to_sql("skor_kelayakan", conn, if_exists="replace", index=False)
     conn.close()
-    df.to_csv(os.path.join(DATA_DIR, "skor_kesehatan.csv"), index=False)
+    df.to_csv(os.path.join(DATA_DIR, "skor_kelayakan.csv"), index=False)
     joblib.dump(model, MODEL_PATH)
 
 
@@ -131,7 +131,7 @@ def main():
 
     periode_terbaru = df_hasil["periode"].max()
     terbaru = df_hasil[df_hasil["periode"] == periode_terbaru]
-    print(f"\nprediksi_risiko_3bln terisi untuk seluruh {len(df_hasil)} baris skor_kesehatan.")
+    print(f"\nprediksi_risiko_3bln terisi untuk seluruh {len(df_hasil)} baris skor_kelayakan.")
     print(f"5 koperasi dengan proyeksi risiko tertinggi (periode {periode_terbaru}):")
     kolom = ["koperasi_id", "kategori", "skor_komposit", "prediksi_risiko_3bln"]
     print(terbaru.sort_values("prediksi_risiko_3bln", ascending=False)[kolom].head(5).to_string(index=False))

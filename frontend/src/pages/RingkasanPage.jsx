@@ -30,7 +30,7 @@ export default function RingkasanPage() {
     <div>
       <h2>Ringkasan</h2>
       <p className="page-desc">
-        Periode {ringkasan.periode} &middot; agregat dari skor kesehatan &amp; notifikasi terbaru. Arti tiap
+        Periode {ringkasan.periode} &middot; agregat dari skor kelayakan &amp; notifikasi terbaru. Arti tiap
         angka: lihat <Link to="/metodologi">Kriteria &amp; Metodologi</Link>.
       </p>
 

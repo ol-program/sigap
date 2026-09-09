@@ -94,7 +94,7 @@ Data berikut SUDAH DIHITUNG oleh sistem untuk satu koperasi. JANGAN menghitung u
 Kondisi operasional koperasi (step 3-4):
 - Nama: {nama}
 - Wilayah: {desa_kelurahan}, {kabupaten_kota}, {provinsi}
-- Skor kesehatan komposit: {skor_komposit}/100 (kategori: {kategori})
+- Skor kelayakan komposit: {skor_komposit}/100 (kategori: {kategori})
 - Sub-skor -- Transaksi: {skor_transaksi}, Stok: {skor_stok}, Pelaporan: {skor_pelaporan}
 - Perubahan dari bulan lalu: {delta_str} poin
 - Proyeksi risiko kategori Kritis dalam 3 bulan: {prediksi_risiko_3bln}%
@@ -112,7 +112,7 @@ Balas HANYA dengan JSON persis format berikut, tanpa teks lain di luar JSON, tan
 
 def load_context(koperasi_id=None, periode=None):
     conn = sqlite3.connect(DB_PATH)
-    skor = pd.read_sql("SELECT * FROM skor_kesehatan", conn)
+    skor = pd.read_sql("SELECT * FROM skor_kelayakan", conn)
     koperasi = pd.read_sql("SELECT * FROM koperasi", conn)
     wilayah = pd.read_sql("SELECT * FROM wilayah", conn)
     profil = pd.read_sql("SELECT * FROM profil_wilayah", conn)

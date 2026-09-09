@@ -24,7 +24,7 @@ export default function MetodologiPage() {
       </p>
 
       <div className="metodologi-section card">
-        <h3>Kategori kesehatan koperasi</h3>
+        <h3>Kategori kelayakan koperasi</h3>
         <p className="page-desc">Ditentukan dari skor komposit (0-100) koperasi pada periode berjalan:</p>
         <div className="kriteria-legend">
           <div><span className="status-dot good" /> <strong>Sehat</strong> — skor ≥ {m.batas_sehat}</div>
@@ -97,7 +97,7 @@ export default function MetodologiPage() {
       <div className="metodologi-section card">
         <h3>Status kemajuan desa (IDM)</h3>
         <p className="page-desc">
-          <strong>Berbeda dari kategori kesehatan koperasi di atas.</strong> Ini indeks resmi Kemendes PDTT (Indeks Desa
+          <strong>Berbeda dari kategori kelayakan koperasi di atas.</strong> Ini indeks resmi Kemendes PDTT (Indeks Desa
           Membangun) yang menggambarkan kondisi WILAYAH desa/kelurahannya — dimensi sosial, ekonomi, dan lingkungan —
           bukan kondisi operasional koperasinya sendiri. Dipakai sebagai konteks untuk rekomendasi produk/promosi AI
           Insight, bukan komponen penghitung skor komposit koperasi.

@@ -1,7 +1,7 @@
 """
 SIGAP Kopdes - Backend API (Step 6)
 
-FastAPI read-only yang menyajikan hasil skor kesehatan (step 3), prediksi
+FastAPI read-only yang menyajikan hasil skor kelayakan (step 3), prediksi
 risiko (step 4), dan AI insight (step 5) ke dashboard React (step 7). Tidak
 menghitung apa pun sendiri, murni query & serialisasi dari sigap_kopdes.db.
 
@@ -97,7 +97,7 @@ def kategorikan_agregat(rata_rata):
 
 app = FastAPI(
     title="SIGAP Kopdes API",
-    description="Skor kesehatan, prediksi risiko, dan AI insight koperasi KDMP.",
+    description="Skor kelayakan, prediksi risiko, dan AI insight koperasi KDMP.",
     version="0.1.0",
 )
 init_auth_db()
@@ -412,9 +412,9 @@ def table_exists(conn, name):
 
 
 def periode_terbaru(conn):
-    row = conn.execute("SELECT MAX(periode) AS p FROM skor_kesehatan").fetchone()
+    row = conn.execute("SELECT MAX(periode) AS p FROM skor_kelayakan").fetchone()
     if row is None or row["p"] is None:
-        raise HTTPException(status_code=503, detail="Tabel skor_kesehatan kosong -- jalankan step 3 dulu.")
+        raise HTTPException(status_code=503, detail="Tabel skor_kelayakan kosong -- jalankan step 3 dulu.")
     return row["p"]
 
 
@@ -481,7 +481,7 @@ def list_koperasi(kategori: Optional[str] = None, kode_wilayah: Optional[str] = 
                    s.periode, s.skor_komposit, s.kategori, s.prediksi_risiko_3bln
             FROM koperasi k
             JOIN wilayah w ON w.kode_wilayah = k.kode_wilayah
-            LEFT JOIN skor_kesehatan s ON s.koperasi_id = k.koperasi_id AND s.periode = ?
+            LEFT JOIN skor_kelayakan s ON s.koperasi_id = k.koperasi_id AND s.periode = ?
             WHERE 1=1 {clause}
         """
         params = [p, *scope_params]
@@ -528,7 +528,7 @@ def detail_koperasi(koperasi_id: str, user: CurrentUser = Depends(get_active_use
         histori_skor = conn.execute("""
             SELECT periode, skor_transaksi, skor_stok, skor_pelaporan, skor_komposit,
                    kategori, prediksi_risiko_3bln
-            FROM skor_kesehatan
+            FROM skor_kelayakan
             WHERE koperasi_id = ?
             ORDER BY periode
         """, (koperasi_id,)).fetchall()
@@ -556,14 +556,14 @@ def detail_koperasi(koperasi_id: str, user: CurrentUser = Depends(get_active_use
 @app.get("/skor")
 def list_skor(periode: Optional[str] = None, koperasi_id: Optional[str] = None,
               user: CurrentUser = Depends(get_active_user)):
-    """Baris skor_kesehatan mentah, difilter opsional per periode dan/atau koperasi.
+    """Baris skor_kelayakan mentah, difilter opsional per periode dan/atau koperasi.
     Di-JOIN ke koperasi hanya untuk menerapkan scope wilayah pmo (kolom yang
-    dikembalikan tetap murni skor_kesehatan.*)."""
+    dikembalikan tetap murni skor_kelayakan.*)."""
     conn = get_conn()
     try:
         clause, scope_params = scope_clause(user, "k")
         sql = f"""
-            SELECT s.* FROM skor_kesehatan s
+            SELECT s.* FROM skor_kelayakan s
             JOIN koperasi k ON k.koperasi_id = s.koperasi_id
             WHERE 1=1 {clause}
         """
@@ -690,14 +690,14 @@ def ringkasan(periode: Optional[str] = None, user: CurrentUser = Depends(get_act
         clause, scope_params = scope_clause(user, "k")
         per_kategori = conn.execute(f"""
             SELECT s.kategori AS kategori, COUNT(*) AS jumlah
-            FROM skor_kesehatan s
+            FROM skor_kelayakan s
             JOIN koperasi k ON k.koperasi_id = s.koperasi_id
             WHERE s.periode = ? {clause}
             GROUP BY s.kategori
         """, [p, *scope_params]).fetchall()
         rata_rata = conn.execute(f"""
             SELECT AVG(s.skor_komposit) AS rata_rata
-            FROM skor_kesehatan s
+            FROM skor_kelayakan s
             JOIN koperasi k ON k.koperasi_id = s.koperasi_id
             WHERE s.periode = ? {clause}
         """, [p, *scope_params]).fetchone()
@@ -733,7 +733,7 @@ def _agregat_wilayah_rows(conn, group_by_col, periode, where_extra="", where_par
                SUM(CASE WHEN s.kategori = 'Kritis' THEN 1 ELSE 0 END) AS kritis
         FROM koperasi k
         JOIN wilayah w ON w.kode_wilayah = k.kode_wilayah
-        LEFT JOIN skor_kesehatan s ON s.koperasi_id = k.koperasi_id AND s.periode = ?
+        LEFT JOIN skor_kelayakan s ON s.koperasi_id = k.koperasi_id AND s.periode = ?
         WHERE 1=1 {where_extra}
         GROUP BY w.{group_by_col}
         ORDER BY w.{group_by_col}
@@ -756,7 +756,7 @@ def _agregat_wilayah_rows(conn, group_by_col, periode, where_extra="", where_par
 
 @app.get("/peta/provinsi")
 def peta_provinsi(periode: Optional[str] = None, user: CurrentUser = Depends(get_active_user)):
-    """Agregat kesehatan koperasi per provinsi -- level 1 drill-down peta.
+    """Agregat kelayakan koperasi per provinsi -- level 1 drill-down peta.
     Lat/lon adalah rata-rata koordinat wilayah di provinsi itu (perkiraan
     visual). pmo hanya melihat provinsi & koperasi dalam scope-nya."""
     conn = get_conn()
@@ -770,7 +770,7 @@ def peta_provinsi(periode: Optional[str] = None, user: CurrentUser = Depends(get
 
 @app.get("/peta/kabupaten")
 def peta_kabupaten(provinsi: str, periode: Optional[str] = None, user: CurrentUser = Depends(get_active_user)):
-    """Agregat kesehatan koperasi per kabupaten/kota DALAM SATU provinsi --
+    """Agregat kelayakan koperasi per kabupaten/kota DALAM SATU provinsi --
     level 2 drill-down peta (diklik dari satu titik provinsi di /peta/provinsi)."""
     conn = get_conn()
     try:
