@@ -15,9 +15,9 @@ Dokumen lengkap: lihat `Proposal_SIGAP_Kopdes_LAN_Datathon_2026.docx`.
 - [x] **7. Dashboard React** — terhubung ke API step 6 (`frontend/`)
 - [x] **Autentikasi & Otorisasi** — login wajib, akses PMO dibatasi per wilayah (`backend/auth/`)
 - [x] **8. Deployment** — live di VPS (lihat `deploy/`):
-  - Dashboard: https://dash.109-105-194-204.sslip.io
-  - Portal superadmin: https://admin.109-105-194-204.sslip.io
-  - API: https://api.109-105-194-204.sslip.io/docs
+  - Dashboard: https://sigapkopdes.duckdns.org
+  - Portal superadmin: https://adminsigapkopdes.duckdns.org
+  - API: https://apisigapkopdes.duckdns.org/docs
 
 Step 5 (AI Insight) dibangun setelah 3 & 4 karena menarasikan skor dan proyeksi risiko yang **sudah dihitung** — LLM diberi angka jadi, tugasnya menjelaskan dan menyarankan tindakan, bukan menghitung sendiri.
 
@@ -328,4 +328,4 @@ deploy/
 - `ANTHROPIC_API_KEY` / `GEMINI_API_KEY` / `OLLAMA_API_KEY` — kalau step 5 mau jalan sungguhan di server produksi.
 - Backup `backend/auth/auth.db` secara terpisah dari `backend/data/output/` — regenerasi data (step 2-4) tidak menyentuhnya, tapi kehilangan disk/volume produksi akan menghapus akun juga kalau tidak di-backup.
 
-Urutan lengkap provisioning (server baru, DNS/sslip.io, systemd, nginx, certbot, akun pertama): lihat `deploy/README.md`.
+Urutan lengkap provisioning (server baru, DNS/DuckDNS, systemd, nginx, certbot, akun pertama): lihat `deploy/README.md`.

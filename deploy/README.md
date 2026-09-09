@@ -115,12 +115,14 @@ chat/CI. `CORS_ORIGINS`/`VITE_API_BASE_URL` di file-file ini sudah diisi
 domain sslip.io (lihat langkah 4), tinggal `ANTHROPIC_API_KEY` yang perlu
 diisi manual.
 
-## 4. Domain (sslip.io, karena belum ada domain asli)
+## 4. Domain (DuckDNS, gratis, karena belum ada domain asli)
 
-IP VPS: `109.105.194.204` → domain sslip.io-nya:
-- Dashboard: `dash.109-105-194-204.sslip.io`
-- Portal superadmin: `admin.109-105-194-204.sslip.io`
-- API: `api.109-105-194-204.sslip.io`
+IP VPS: `109.105.194.204` → domain DuckDNS-nya (didaftarkan manual di
+duckdns.org, IP diisi statis ke IP VPS, tidak butuh script auto-update
+karena IP-nya tidak berubah):
+- Dashboard: `sigapkopdes.duckdns.org`
+- Portal superadmin: `adminsigapkopdes.duckdns.org`
+- API: `apisigapkopdes.duckdns.org`
 
 `server_name` di `deploy/nginx/*.conf` sudah diisi domain di atas. Kalau
 nanti beli domain asli, tinggal ganti `server_name` di tiga file itu +
@@ -135,9 +137,9 @@ ln -sf /etc/nginx/sites-available/api.conf /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl reload nginx
 certbot --nginx \
-  -d dash.109-105-194-204.sslip.io \
-  -d admin.109-105-194-204.sslip.io \
-  -d api.109-105-194-204.sslip.io
+  -d sigapkopdes.duckdns.org \
+  -d adminsigapkopdes.duckdns.org \
+  -d apisigapkopdes.duckdns.org
 ```
 
 ## 5. Backend service
