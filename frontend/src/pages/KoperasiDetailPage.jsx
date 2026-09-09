@@ -61,7 +61,7 @@ export default function KoperasiDetailPage() {
 
             <dt>
               Status kemajuan desa (IDM)
-              <InfoTooltip text="Indeks resmi Kemendes PDTT untuk kondisi WILAYAH (bukan kondisi koperasi ini) -- dipakai sebagai konteks rekomendasi AI Insight." />
+              <InfoTooltip text="Indeks resmi Kemendes PDTT untuk kondisi wilayah, bukan kondisi koperasi ini. Dipakai sebagai konteks rekomendasi AI Insight." />
             </dt>
             <dd>{koperasi.status_idm} (skor {koperasi.skor_idm})</dd>
 

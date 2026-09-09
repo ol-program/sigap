@@ -70,7 +70,7 @@ export default function LoginPage() {
         </button>
 
         <p className="page-desc" style={{ marginTop: 16, marginBottom: 0, fontSize: 12 }}>
-          Tidak ada pendaftaran mandiri -- hubungi admin untuk membuat akun.
+          Tidak ada pendaftaran mandiri. Hubungi admin untuk membuat akun baru.
         </p>
       </form>
     </div>

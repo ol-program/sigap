@@ -74,7 +74,7 @@ export default function AiKeyCard() {
 
   return (
     <div className="card" style={{ marginBottom: 20 }}>
-      <h3 style={{ marginTop: 0 }}>AI Insight -- Provider &amp; API Key</h3>
+      <h3 style={{ marginTop: 0 }}>AI Insight — Provider &amp; API Key</h3>
       <p className="page-desc">
         Dipakai sistem untuk menghasilkan narasi &amp; rekomendasi AI Insight (lihat halaman Detail Koperasi di
         dashboard utama). Perubahan di sini langsung berlaku tanpa perlu restart server, dan tersimpan permanen
@@ -98,7 +98,7 @@ export default function AiKeyCard() {
 
       {status && (
         <p style={{ fontSize: 13, color: "var(--text-secondary)", margin: "12px 0" }}>
-          Provider aktif sekarang: <strong>{status.provider}</strong> ({status.env_name}) --{" "}
+          Provider aktif sekarang: <strong>{status.provider}</strong> ({status.env_name}) —{" "}
           {status.is_set ? (
             <span className="badge-ok">Terpasang ({status.masked})</span>
           ) : (
@@ -117,11 +117,13 @@ export default function AiKeyCard() {
             placeholder={status?.model_default}
           />
           <div className="field-hint">
-            Isi persis sesuai id model dari dokumentasi provider. Bisa isi LEBIH DARI SATU dipisah koma, mis.{" "}
-            <code>gemini-3.5-flash, gemini-2.5-flash, gemma-4-31b-it</code> -- dicoba BERURUTAN sebagai fallback
-            (kalau model pertama gagal, mis. kuota habis atau model belum tersedia, otomatis coba yang
-            berikutnya). Id-id ini TIDAK diverifikasi di sini, kalau semuanya salah/tidak ada provider yang akan
-            menolaknya saat generate insight. Default kalau dikosongkan: <code>{status?.model_default}</code>.
+            Isi persis sesuai id model dari dokumentasi provider. Bisa diisi lebih dari satu, dipisah koma,
+            misalnya{" "}
+            <code>gemini-3.5-flash, gemini-2.5-flash, gemma-4-31b-it</code> — dicoba berurutan sebagai fallback:
+            kalau model pertama gagal (misalnya kuota habis atau model belum tersedia), sistem otomatis mencoba
+            yang berikutnya. Id model ini tidak diverifikasi di sini — kalau ada yang salah atau tidak
+            didukung, provider akan menolaknya saat AI Insight dibuat. Default kalau dikosongkan:{" "}
+            <code>{status?.model_default}</code>.
           </div>
         </div>
         <button type="submit" className="btn" disabled={savingModel}>
@@ -145,8 +147,9 @@ export default function AiKeyCard() {
             required
           />
           <div className="field-hint">
-            Key ini berlaku untuk provider yang sedang aktif di atas -- kalau ganti provider, key untuk provider itu
-            perlu diisi terpisah (masing-masing provider punya API key sendiri, tidak saling menggantikan).
+            Key ini berlaku untuk provider yang sedang aktif di atas. Kalau ganti provider, key untuk provider
+            itu perlu diisi terpisah — masing-masing provider punya API key sendiri dan tidak saling
+            menggantikan.
           </div>
         </div>
 

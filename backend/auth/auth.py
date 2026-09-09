@@ -167,7 +167,7 @@ class CurrentUser:
 def get_current_user(creds: HTTPAuthorizationCredentials = Depends(bearer_scheme)) -> CurrentUser:
     _require_secret()
     if creds is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Belum login -- silakan login terlebih dahulu.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Belum login. Silakan login terlebih dahulu.")
     try:
         payload = jwt.decode(creds.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     except jwt.ExpiredSignatureError:

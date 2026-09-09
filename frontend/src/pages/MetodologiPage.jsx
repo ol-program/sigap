@@ -98,7 +98,7 @@ export default function MetodologiPage() {
         <h3>Status kemajuan desa (IDM)</h3>
         <p className="page-desc">
           <strong>Berbeda dari kategori kelayakan koperasi di atas.</strong> Ini indeks resmi Kemendes PDTT (Indeks Desa
-          Membangun) yang menggambarkan kondisi WILAYAH desa/kelurahannya — dimensi sosial, ekonomi, dan lingkungan —
+          Membangun) yang menggambarkan kondisi wilayah desa/kelurahannya — dimensi sosial, ekonomi, dan lingkungan —
           bukan kondisi operasional koperasinya sendiri. Dipakai sebagai konteks untuk rekomendasi produk/promosi AI
           Insight, bukan komponen penghitung skor komposit koperasi.
         </p>

@@ -48,7 +48,7 @@ export function AuthProvider({ children }) {
     // sini sebelum token dipasang, supaya kredensial valid tidak membuka
     // sesi di app yang salah.
     if (res.role === "superadmin") {
-      throw new Error("Akun ini adalah superadmin -- gunakan portal Manajemen Akun terpisah, bukan dashboard ini.");
+      throw new Error("Akun ini terdaftar sebagai superadmin. Silakan gunakan portal Manajemen Akun, bukan dashboard ini.");
     }
     const next = {
       token: res.access_token, role: res.role, scope: res.scope, username,

@@ -39,7 +39,7 @@ export default function ChangePasswordPage() {
       <h2>Ganti Password</h2>
       <p className="page-desc">
         {forced
-          ? "Akun Anda dibuat oleh admin dengan password sementara -- ganti dulu sebelum melanjutkan ke dashboard."
+          ? "Akun Anda dibuat oleh admin dengan password sementara. Silakan ganti password terlebih dahulu sebelum melanjutkan ke dashboard."
           : "Ganti password akun Anda."}
       </p>
 

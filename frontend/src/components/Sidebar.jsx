@@ -54,7 +54,7 @@ export default function Sidebar() {
           <div className="user-meta">
             <div className="user-name">{session.username}</div>
             <div className="user-role">
-              {session.role === "admin" ? "Pemerintah Pusat (Admin)" : `PMO -- ${session.scope.length} wilayah`}
+              {session.role === "admin" ? "Pemerintah Pusat (Admin)" : `PMO — ${session.scope.length} wilayah`}
             </div>
           </div>
         </div>

@@ -15,7 +15,7 @@ export default function LoginPage({ onLoggedIn }) {
       const res = await api.login(username, password);
       // Portal ini murni manajemen akun -- role admin/pmo pakai dashboard di frontend/.
       if (res.role !== "superadmin") {
-        setError("Akun ini bukan superadmin -- gunakan dashboard utama, bukan portal Manajemen Akun ini.");
+        setError("Akun ini bukan superadmin. Silakan gunakan dashboard utama, bukan portal Manajemen Akun ini.");
         return;
       }
       onLoggedIn(res, username);
@@ -34,7 +34,7 @@ export default function LoginPage({ onLoggedIn }) {
       <form onSubmit={handleSubmit} className="card" style={{ width: 320 }}>
         <img src="/branding/sigap-lockup.svg" alt="SIGAP Kopdes" height={40} className="logo-lockup-light" style={{ marginBottom: 16 }} />
         <img src="/branding/sigap-lockup-latar-gelap.svg" alt="SIGAP Kopdes" height={40} className="logo-lockup-dark" style={{ marginBottom: 16 }} />
-        <p className="page-desc">Portal Manajemen Akun -- khusus superadmin.</p>
+        <p className="page-desc">Portal Manajemen Akun, khusus untuk superadmin.</p>
 
         <div className="form-field">
           <label>Username</label>
@@ -52,7 +52,7 @@ export default function LoginPage({ onLoggedIn }) {
         </button>
 
         <p className="page-desc" style={{ marginTop: 16, marginBottom: 0, fontSize: 12 }}>
-          Tidak ada pendaftaran mandiri -- akun superadmin dibuat lewat proses setup awal server.
+          Tidak ada pendaftaran mandiri. Akun superadmin dibuat melalui proses instalasi awal server.
         </p>
       </form>
     </div>

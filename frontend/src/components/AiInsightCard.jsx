@@ -54,7 +54,7 @@ export default function AiInsightCard({ koperasiId, initial }) {
     return (
       <p className="page-desc" style={{ margin: 0 }}>
         {belumDikonfigurasi
-          ? "AI insight belum bisa dibuat otomatis -- fitur ini belum diaktifkan di server, hubungi admin."
+          ? "AI Insight belum bisa dibuat secara otomatis. Fitur ini belum diaktifkan di server — silakan hubungi admin."
           : error.message}
       </p>
     );

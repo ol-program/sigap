@@ -34,7 +34,7 @@ export default function ChangePasswordPage({ onChanged, onLogout }) {
       <form onSubmit={handleSubmit} className="card" style={{ width: 340 }}>
         <h2 style={{ marginTop: 0 }}>Ganti Password</h2>
         <p className="page-desc">
-          Akun superadmin ini dibuat dengan password sementara -- ganti dulu sebelum melanjutkan.
+          Akun superadmin ini dibuat dengan password sementara. Silakan ganti password terlebih dahulu sebelum melanjutkan.
         </p>
 
         <div className="form-field">

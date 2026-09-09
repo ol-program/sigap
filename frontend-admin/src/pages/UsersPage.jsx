@@ -24,7 +24,7 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
     e.preventDefault();
     setError(null);
     if (role === "pmo" && kabupaten.size === 0) {
-      setError("Pilih minimal satu kabupaten/kota untuk role PMO -- kalau kosong, akun itu tidak akan bisa melihat data apa pun.");
+      setError("Pilih minimal satu kabupaten/kota untuk role PMO. Jika dikosongkan, akun tersebut tidak akan bisa melihat data apa pun.");
       return;
     }
     setLoading(true);
@@ -45,7 +45,7 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
   return (
     <div className="modal-overlay" onClick={onClose}>
       <form className="card modal-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h3>{isEdit ? `Edit Akun -- ${initialUser.username}` : "Tambah Akun"}</h3>
+        <h3>{isEdit ? `Edit Akun — ${initialUser.username}` : "Tambah Akun"}</h3>
 
         {!isEdit && (
           <div className="form-field">
@@ -64,7 +64,7 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
               required
             />
             <div className="field-hint">
-              Minimal 8 karakter. Pemilik akun akan DIWAJIBKAN menggantinya saat login pertama.
+              Minimal 8 karakter. Pemilik akun akan diwajibkan menggantinya saat login pertama.
             </div>
           </div>
         )}
@@ -72,12 +72,12 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
         <div className="form-field">
           <label>Role</label>
           <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="pmo">PMO -- akses terbatas wilayah tertentu</option>
-            <option value="admin">Pemerintah Pusat (Admin) -- akses semua wilayah (data koperasi)</option>
+            <option value="pmo">PMO — akses terbatas ke wilayah tertentu</option>
+            <option value="admin">Pemerintah Pusat (Admin) — akses semua wilayah (data koperasi)</option>
           </select>
           <div className="field-hint">
-            Superadmin tidak ada di pilihan ini -- sistem cuma boleh punya satu, dan sudah dibuat sekali saat
-            setup awal server.
+            Superadmin tidak tersedia di pilihan ini. Sistem hanya boleh memiliki satu akun superadmin, dan akun
+            itu sudah dibuat saat instalasi awal server.
           </div>
         </div>
 
@@ -142,9 +142,9 @@ function ResetPasswordModal({ user, onClose, onSaved }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <form className="card modal-card" onClick={(e) => e.stopPropagation()} onSubmit={handleSubmit}>
-        <h3>Reset Password -- {user.username}</h3>
+        <h3>Reset Password — {user.username}</h3>
         <p className="page-desc">
-          Akun ini akan DIWAJIBKAN mengganti password ini lagi saat login berikutnya.
+          Pemilik akun akan diwajibkan mengganti password ini lagi saat login berikutnya.
         </p>
 
         <div className="form-field">
@@ -225,8 +225,9 @@ export default function UsersPage({ session, onLogout }) {
             <h2 style={{ margin: 0 }}>Manajemen Akun</h2>
           </div>
           <p className="page-desc">
-            Portal superadmin SIGAP Kopdes -- kelola akun login dashboard (admin &amp; PMO). Akun baru dan reset
-            password mewajibkan pemiliknya mengganti password saat login berikutnya.
+            Portal superadmin SIGAP Kopdes untuk mengelola akun login dashboard, baik untuk role Admin maupun
+            PMO. Pemilik akun baru atau akun yang password-nya di-reset akan diminta mengganti password saat
+            login berikutnya.
           </p>
         </div>
         <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 16 }}>
@@ -277,10 +278,10 @@ export default function UsersPage({ session, onLogout }) {
                     {u.role === "admin"
                       ? "Semua wilayah"
                       : u.role === "superadmin"
-                        ? "-- (manajemen akun, bukan data)"
+                        ? "— (manajemen akun, bukan data)"
                         : u.kabupaten_list.length > 0
                           ? u.kabupaten_list.join(", ")
-                          : "-- (belum ada wilayah, jadi belum bisa lihat data apa pun)"}
+                          : "— (belum ada wilayah, jadi belum bisa lihat data apa pun)"}
                   </td>
                   <td>
                     {u.must_change_password
@@ -290,7 +291,7 @@ export default function UsersPage({ session, onLogout }) {
                   <td>
                     {u.role === "superadmin" ? (
                       <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        -- (dikelola langsung di server, bukan lewat portal ini)
+                        — (dikelola langsung di server, bukan lewat portal ini)
                       </span>
                     ) : confirmDelete === u.username ? (
                       <div className="row-actions">

@@ -174,8 +174,8 @@ def _validate_role_scope(role: str, kabupaten_list: list) -> list:
     if role not in ("admin", "pmo"):
         raise HTTPException(
             status_code=422,
-            detail="role harus 'admin' atau 'pmo' -- superadmin tidak bisa dibuat/diubah lewat sini "
-                   "(cuma boleh ada satu, dan sudah dibuat sekali saat setup awal server).",
+            detail="role harus 'admin' atau 'pmo'. Superadmin tidak bisa dibuat/diubah lewat sini "
+                   "(hanya boleh ada satu, dan sudah dibuat sekali saat setup awal server).",
         )
     if role == "pmo" and not kabupaten_list:
         raise HTTPException(status_code=422, detail="Role pmo butuh minimal satu kabupaten/kota.")
@@ -357,7 +357,7 @@ def admin_update_user(username: str, body: UpdateUserBody, superadmin: CurrentUs
     if target["role"] == "superadmin":
         raise HTTPException(
             status_code=400,
-            detail="Akun superadmin tidak bisa diubah lewat sini -- perlu akses langsung ke server.",
+            detail="Akun superadmin tidak bisa diubah lewat sini. Perlu akses langsung ke server.",
         )
     scope = _validate_role_scope(body.role, body.kabupaten_list)
     update_user_scope(username, body.role, scope)
@@ -386,7 +386,7 @@ def admin_delete_user(username: str, superadmin: CurrentUser = Depends(get_super
     if target["role"] == "superadmin":
         raise HTTPException(
             status_code=400,
-            detail="Akun superadmin tidak bisa dihapus lewat sini -- perlu akses langsung ke server.",
+            detail="Akun superadmin tidak bisa dihapus lewat sini. Perlu akses langsung ke server.",
         )
     delete_user_record(username)
     return {"ok": True}
@@ -396,7 +396,7 @@ def get_conn():
     if not os.path.exists(DB_PATH):
         raise HTTPException(
             status_code=503,
-            detail="Data belum tersedia -- sistem belum selesai di-setup, hubungi admin.",
+            detail="Data belum tersedia karena sistem belum selesai di-setup. Hubungi admin.",
         )
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -413,7 +413,7 @@ def table_exists(conn, name):
 def periode_terbaru(conn):
     row = conn.execute("SELECT MAX(periode) AS p FROM skor_kelayakan").fetchone()
     if row is None or row["p"] is None:
-        raise HTTPException(status_code=503, detail="Data skor belum tersedia -- hubungi admin.")
+        raise HTTPException(status_code=503, detail="Data skor belum tersedia. Hubungi admin.")
     return row["p"]
 
 
