@@ -33,3 +33,6 @@ indeks-desa-membangun-tahun-2024-hasil-pemutakhiran*.xlsx
 
 # Arsip redundan -- isinya identik dengan files/ yang sudah di-track.
 files.zip
+
+# Bahan internal untuk juri -- bukan bagian dari proyek yang perlu publik.
+BAHAN_PAPARAN_JURI.md
