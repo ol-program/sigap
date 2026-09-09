@@ -76,7 +76,7 @@ export default function AiKeyCard() {
     <div className="card" style={{ marginBottom: 20 }}>
       <h3 style={{ marginTop: 0 }}>AI Insight -- Provider &amp; API Key</h3>
       <p className="page-desc">
-        Dipakai backend untuk menghasilkan narasi &amp; rekomendasi AI Insight (lihat halaman Detail Koperasi di
+        Dipakai sistem untuk menghasilkan narasi &amp; rekomendasi AI Insight (lihat halaman Detail Koperasi di
         dashboard utama). Perubahan di sini langsung berlaku tanpa perlu restart server, dan tersimpan permanen
         (tidak hilang saat server di-restart).
       </p>

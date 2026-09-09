@@ -54,7 +54,7 @@ export default function AiInsightCard({ koperasiId, initial }) {
     return (
       <p className="page-desc" style={{ margin: 0 }}>
         {belumDikonfigurasi
-          ? "AI insight belum bisa dibuat otomatis -- server belum dikonfigurasi API key provider LLM (ANTHROPIC_API_KEY, GEMINI_API_KEY, atau OLLAMA_API_KEY)."
+          ? "AI insight belum bisa dibuat otomatis -- fitur ini belum diaktifkan di server, hubungi admin."
           : error.message}
       </p>
     );

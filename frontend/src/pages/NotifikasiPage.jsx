@@ -26,7 +26,7 @@ export default function NotifikasiPage() {
   return (
     <div>
       <h2>Notifikasi</h2>
-      <p className="page-desc">Notifikasi otomatis dari engine skor (step 3) -- mis. penurunan skor signifikan.</p>
+      <p className="page-desc">Notifikasi otomatis saat skor koperasi turun signifikan atau masuk kategori Kritis.</p>
 
       <div className="filters-row">
         <select value={status} onChange={(e) => setStatus(e.target.value)}>

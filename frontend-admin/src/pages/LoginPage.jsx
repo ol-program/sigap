@@ -52,8 +52,7 @@ export default function LoginPage({ onLoggedIn }) {
         </button>
 
         <p className="page-desc" style={{ marginTop: 16, marginBottom: 0, fontSize: 12 }}>
-          Tidak ada pendaftaran mandiri -- akun superadmin dibuat lewat{" "}
-          <code>backend/auth/create_user.py --role superadmin</code>.
+          Tidak ada pendaftaran mandiri -- akun superadmin dibuat lewat proses setup awal server.
         </p>
       </form>
     </div>

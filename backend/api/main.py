@@ -175,7 +175,7 @@ def _validate_role_scope(role: str, kabupaten_list: list) -> list:
         raise HTTPException(
             status_code=422,
             detail="role harus 'admin' atau 'pmo' -- superadmin tidak bisa dibuat/diubah lewat sini "
-                   "(cuma boleh ada satu, dibuat sekali lewat CLI saat bootstrap).",
+                   "(cuma boleh ada satu, dan sudah dibuat sekali saat setup awal server).",
         )
     if role == "pmo" and not kabupaten_list:
         raise HTTPException(status_code=422, detail="Role pmo butuh minimal satu kabupaten/kota.")
@@ -357,7 +357,7 @@ def admin_update_user(username: str, body: UpdateUserBody, superadmin: CurrentUs
     if target["role"] == "superadmin":
         raise HTTPException(
             status_code=400,
-            detail="Akun superadmin tidak bisa diubah lewat sini -- gunakan CLI (backend/auth/create_user.py) kalau memang perlu.",
+            detail="Akun superadmin tidak bisa diubah lewat sini -- perlu akses langsung ke server.",
         )
     scope = _validate_role_scope(body.role, body.kabupaten_list)
     update_user_scope(username, body.role, scope)
@@ -386,7 +386,7 @@ def admin_delete_user(username: str, superadmin: CurrentUser = Depends(get_super
     if target["role"] == "superadmin":
         raise HTTPException(
             status_code=400,
-            detail="Akun superadmin tidak bisa dihapus lewat sini -- gunakan akses langsung ke database kalau memang perlu.",
+            detail="Akun superadmin tidak bisa dihapus lewat sini -- perlu akses langsung ke server.",
         )
     delete_user_record(username)
     return {"ok": True}
@@ -396,8 +396,7 @@ def get_conn():
     if not os.path.exists(DB_PATH):
         raise HTTPException(
             status_code=503,
-            detail="sigap_kopdes.db belum ada -- jalankan pipeline step 2-4 dulu "
-                   "(lihat README bagian 'Menjalankan step 2/3/4').",
+            detail="Data belum tersedia -- sistem belum selesai di-setup, hubungi admin.",
         )
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
@@ -414,7 +413,7 @@ def table_exists(conn, name):
 def periode_terbaru(conn):
     row = conn.execute("SELECT MAX(periode) AS p FROM skor_kelayakan").fetchone()
     if row is None or row["p"] is None:
-        raise HTTPException(status_code=503, detail="Tabel skor_kelayakan kosong -- jalankan step 3 dulu.")
+        raise HTTPException(status_code=503, detail="Data skor belum tersedia -- hubungi admin.")
     return row["p"]
 
 
@@ -615,9 +614,8 @@ def ringkas_error_llm(e):
     rendah = teks.lower()
     if "429" in teks or "quota" in rendah or "rate" in rendah or "too_many_requests" in rendah:
         return (
-            "Kuota API provider LLM untuk hari ini sudah habis (tier gratis biasanya dibatasi "
-            "puluhan request/hari). Coba lagi nanti, atau ganti AI_PROVIDER di server -- lihat "
-            "README bagian 'Menjalankan step 5'."
+            "Kuota AI Insight untuk hari ini sudah habis (tier gratis biasanya dibatasi "
+            "puluhan request/hari). Coba lagi nanti, atau hubungi admin."
         )
     return f"Panggilan LLM gagal: {teks[:200]}"
 

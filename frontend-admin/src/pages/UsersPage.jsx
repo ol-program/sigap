@@ -24,7 +24,7 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
     e.preventDefault();
     setError(null);
     if (role === "pmo" && kabupaten.size === 0) {
-      setError("Pilih minimal satu kabupaten/kota untuk role pmo (scope kosong berarti tidak bisa lihat data apa pun).");
+      setError("Pilih minimal satu kabupaten/kota untuk role PMO -- kalau kosong, akun itu tidak akan bisa melihat data apa pun.");
       return;
     }
     setLoading(true);
@@ -76,8 +76,8 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
             <option value="admin">Pemerintah Pusat (Admin) -- akses semua wilayah (data koperasi)</option>
           </select>
           <div className="field-hint">
-            Superadmin tidak ada di pilihan ini -- sistem cuma boleh punya satu, dibuat sekali lewat CLI saat
-            bootstrap (lihat README).
+            Superadmin tidak ada di pilihan ini -- sistem cuma boleh punya satu, dan sudah dibuat sekali saat
+            setup awal server.
           </div>
         </div>
 
@@ -280,7 +280,7 @@ export default function UsersPage({ session, onLogout }) {
                         ? "-- (manajemen akun, bukan data)"
                         : u.kabupaten_list.length > 0
                           ? u.kabupaten_list.join(", ")
-                          : "-- (tidak ada scope, fail closed)"}
+                          : "-- (belum ada wilayah, jadi belum bisa lihat data apa pun)"}
                   </td>
                   <td>
                     {u.must_change_password
@@ -290,7 +290,7 @@ export default function UsersPage({ session, onLogout }) {
                   <td>
                     {u.role === "superadmin" ? (
                       <span style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                        -- (kelola lewat CLI, bukan portal ini)
+                        -- (dikelola langsung di server, bukan lewat portal ini)
                       </span>
                     ) : confirmDelete === u.username ? (
                       <div className="row-actions">
