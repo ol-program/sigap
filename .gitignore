@@ -26,6 +26,13 @@ frontend-admin/.env.production
 # produksi (lihat README bagian "Rencana deployment").
 backend/auth/auth.db
 
+# Hasil generate_data.py/compute_scores.py/predict_risk.py/generate_insight.py --
+# dulu ikut di-commit sebagai contoh dataset, tapi di produksi file ini terus
+# ditulis ulang tiap dashboard generate AI Insight baru, bikin `git pull` di
+# VPS selalu gagal (local changes bentrok tiap kali). Regenerasi:
+# lihat README bagian Instalasi.
+backend/data/output/
+
 # Sumber IDM mentah (7MB+) -- cuma dipakai sekali oleh
 # backend/data/prepare_idm_lookup.py, hasilnya (idm_2024_lookup.csv) sudah
 # di-commit dan itu yang dibaca generate_data.py setiap run.
