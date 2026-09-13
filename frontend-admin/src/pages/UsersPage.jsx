@@ -24,7 +24,7 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
     e.preventDefault();
     setError(null);
     if (role === "pmo" && kabupaten.size === 0) {
-      setError("Pilih minimal satu kabupaten/kota untuk role PMO. Jika dikosongkan, akun tersebut tidak akan bisa melihat data apa pun.");
+      setError("Pilih minimal satu kabupaten/kota untuk role PMO (Pelaksana Monitoring dan Operasional). Jika dikosongkan, akun tersebut tidak akan bisa melihat data apa pun.");
       return;
     }
     setLoading(true);
@@ -72,7 +72,7 @@ function UserFormModal({ mode, initialUser, kabupatenOptions, onClose, onSaved }
         <div className="form-field">
           <label>Role</label>
           <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="pmo">PMO — akses terbatas ke wilayah tertentu</option>
+            <option value="pmo">PMO (Pelaksana Monitoring dan Operasional) — akses terbatas ke wilayah tertentu</option>
             <option value="admin">Pemerintah Pusat (Admin) — akses semua wilayah (data koperasi)</option>
           </select>
           <div className="field-hint">
@@ -226,7 +226,7 @@ export default function UsersPage({ session, onLogout }) {
           </div>
           <p className="page-desc">
             Portal superadmin SIGAP Kopdes untuk mengelola akun login dashboard, baik untuk role Admin maupun
-            PMO. Pemilik akun baru atau akun yang password-nya di-reset akan diminta mengganti password saat
+            PMO (Pelaksana Monitoring dan Operasional). Pemilik akun baru atau akun yang password-nya di-reset akan diminta mengganti password saat
             login berikutnya.
           </p>
         </div>

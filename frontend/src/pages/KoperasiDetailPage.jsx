@@ -56,7 +56,7 @@ export default function KoperasiDetailPage() {
             <dt>Status operasional</dt>
             <dd>{koperasi.status_operasional}</dd>
 
-            <dt>PMO penanggung jawab</dt>
+            <dt>PMO (Pelaksana Monitoring dan Operasional) penanggung jawab</dt>
             <dd>{koperasi.pmo_penanggung_jawab}</dd>
 
             <dt>
