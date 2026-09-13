@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { api } from "../api.js";
 import StatusBadge from "../components/StatusBadge.jsx";
 import InfoTooltip from "../components/InfoTooltip.jsx";
@@ -7,9 +7,28 @@ import InfoTooltip from "../components/InfoTooltip.jsx";
 export default function KoperasiListPage() {
   const [rows, setRows] = useState(null);
   const [wilayahList, setWilayahList] = useState([]);
-  const [kategori, setKategori] = useState("");
-  const [kodeWilayah, setKodeWilayah] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const kategori = searchParams.get("kategori") || "";
+  const kodeWilayah = searchParams.get("kode_wilayah") || "";
   const [error, setError] = useState(null);
+
+  const setKategori = (value) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set("kategori", value);
+      else next.delete("kategori");
+      return next;
+    });
+  };
+
+  const setKodeWilayah = (value) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (value) next.set("kode_wilayah", value);
+      else next.delete("kode_wilayah");
+      return next;
+    });
+  };
 
   useEffect(() => {
     api.wilayah().then(setWilayahList).catch(() => {});

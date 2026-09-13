@@ -42,18 +42,18 @@ export default function RingkasanPage() {
           </div>
           <div className="value">{ringkasan.rata_rata_skor_komposit ?? "-"}</div>
         </div>
-        <div className="stat-tile">
+        <Link to="/koperasi?kategori=Sehat" className="stat-tile">
           <div className="label"><span className="status-dot good" /> Sehat</div>
           <div className="value">{per.Sehat ?? 0}</div>
-        </div>
-        <div className="stat-tile">
+        </Link>
+        <Link to="/koperasi?kategori=Waspada" className="stat-tile">
           <div className="label"><span className="status-dot warning" /> Waspada</div>
           <div className="value">{per.Waspada ?? 0}</div>
-        </div>
-        <div className="stat-tile">
+        </Link>
+        <Link to="/koperasi?kategori=Kritis" className="stat-tile">
           <div className="label"><span className="status-dot critical" /> Kritis</div>
           <div className="value">{per.Kritis ?? 0}</div>
-        </div>
+        </Link>
         <div className="stat-tile">
           <div className="label">
             Notifikasi belum ditindaklanjuti
